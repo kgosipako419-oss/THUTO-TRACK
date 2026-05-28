@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Subjects &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Subjects</h1>
+  <p class="text-sm text-slate-500">{{ teacher.school.name }}</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="md:col-span-1">
+    <form method="post" class="bg-white rounded-lg shadow p-5 space-y-3">
+      {% csrf_token %}
+      <h2 class="font-semibold">Add a subject</h2>
+      <div>
+        <label class="block text-sm font-medium mb-1">Name</label>
+        <input type="text" name="name" required placeholder="e.g. History"
+               class="w-full border border-slate-300 rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Code</label>
+        <input type="text" name="code" required maxlength="20" placeholder="e.g. HIST"
+               class="w-full border border-slate-300 rounded px-3 py-2 uppercase">
+        <p class="text-xs text-slate-500 mt-1">Short code, unique within your school.</p>
+      </div>
+      <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2 rounded">
+        Create subject
+      </button>
+      <p class="text-xs text-slate-500">You'll be auto-assigned as a teacher of this subject.</p>
+    </form>
+  </div>
+
+  <div class="md:col-span-2">
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="font-semibold mb-3">All subjects at this school ({{ subjects|length }})</h2>
+      {% if subjects %}
+        <table class="w-full text-sm">
+          <thead class="text-left text-slate-500 border-b">
+            <tr><th class="py-2">Name</th><th>Code</th><th>Assignment</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            {% for s in subjects %}
+            <tr>
+              <td class="py-2">{{ s.name }}</td>
+              <td class="font-mono text-xs">{{ s.code }}</td>
+              <td>
+                {% if s.id in my_subject_ids %}
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">You teach this</span>
+                {% else %}
+                  <span class="text-xs text-slate-400">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-sm text-slate-500">No subjects yet. Add the first one on the left.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}No admin access &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto bg-white rounded-lg shadow p-8 mt-12 text-center">
+  <h1 class="text-xl font-bold mb-2">No admin access</h1>
+  <p class="text-slate-600">Your account isn't linked to a school admin profile.</p>
+  <p class="text-slate-600 mt-2">Ask an existing admin to set up your profile, or sign in as the teacher portal user.</p>
+  <div class="mt-6 flex gap-2 justify-center">
+    <a href="{% url 'teachers:dashboard' %}" class="text-sm text-emerald-700 hover:underline">Go to teacher portal</a>
+    <form method="post" action="{% url 'teachers:logout' %}" class="inline">
+      {% csrf_token %}
+      <button class="text-sm text-emerald-700 hover:underline">Log out</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

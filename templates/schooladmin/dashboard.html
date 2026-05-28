@@ -1,0 +1,114 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Admin dashboard &middot; ThutoTrack{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">{{ school.name }}</h1>
+  <p class="text-slate-500 text-sm">
+    {% if admin.title %}{{ admin.title }} &middot; {% endif %}
+    {{ admin.user.get_full_name|default:admin.user.username }}
+  </p>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <a href="{% url 'schooladmin:teachers' %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+    <div class="text-xs text-slate-500">Teachers</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ teacher_count }}</div>
+  </a>
+  <a href="{% url 'schooladmin:students' %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+    <div class="text-xs text-slate-500">Students</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ student_count }}</div>
+  </a>
+  <a href="{% url 'schooladmin:classes' %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+    <div class="text-xs text-slate-500">Classes</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ class_count }}</div>
+  </a>
+  <a href="{% url 'schooladmin:subjects' %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+    <div class="text-xs text-slate-500">Subjects</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ subject_count }}</div>
+  </a>
+  <a href="{% url 'schooladmin:enquiries' %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+    <div class="text-xs text-slate-500">Open enquiries</div>
+    <div class="text-2xl font-bold {% if open_enquiries %}text-amber-700{% else %}text-slate-400{% endif %}">{{ open_enquiries }}</div>
+    {% if in_progress_enquiries %}<div class="text-xs text-blue-700 mt-1">+{{ in_progress_enquiries }} in progress</div>{% endif %}
+  </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+  <section class="bg-white rounded-lg shadow p-5">
+    <h2 class="font-semibold mb-2">School-wide performance ({{ year }})</h2>
+    {% if overall_avg is not None %}
+      <div class="text-4xl font-bold text-emerald-700">{{ overall_avg|floatformat:1 }}%</div>
+      <p class="text-sm text-slate-600 mt-1">across {{ overall_assessments }} assessment(s)</p>
+    {% else %}
+      <p class="text-sm text-slate-500">No marks recorded this year.</p>
+    {% endif %}
+    <div class="mt-3 pt-3 border-t">
+      <div class="text-xs text-slate-500">Attendance rate ({{ year }})</div>
+      <div class="text-2xl font-bold text-emerald-700">
+        {% if attendance_rate is not None %}{{ attendance_rate|floatformat:1 }}%{% else %}—{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-lg shadow p-5 lg:col-span-2">
+    <h2 class="font-semibold mb-3">Performance by subject ({{ year }})</h2>
+    {% if by_subject %}
+      <table class="w-full text-sm">
+        <thead class="text-left text-slate-500 border-b">
+          <tr><th class="py-2">Subject</th><th class="text-right">Assessments</th><th class="text-right">Average</th></tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for s in by_subject %}
+          <tr>
+            <td class="py-2">{{ s.subject__name }}</td>
+            <td class="text-right">{{ s.assessment_count }}</td>
+            <td class="text-right font-mono">
+              <span class="{% if s.avg_pct >= 70 %}text-emerald-700{% elif s.avg_pct >= 50 %}text-amber-600{% else %}text-red-600{% endif %} font-semibold">
+                {{ s.avg_pct|floatformat:1 }}%
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-sm text-slate-500">No marks recorded this year yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="bg-white rounded-lg shadow p-5">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="font-semibold">Recent enquiries</h2>
+    <a href="{% url 'schooladmin:enquiries' %}" class="text-sm text-emerald-700 hover:underline">View all</a>
+  </div>
+  {% if recent_enquiries %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr><th class="py-2">Subject</th><th>From</th><th>Category</th><th>Status</th><th>Sent</th></tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for e in recent_enquiries %}
+        <tr>
+          <td class="py-2"><a href="{% url 'schooladmin:enquiry_detail' e.id %}" class="text-emerald-700 hover:underline font-medium">{{ e.subject }}</a></td>
+          <td>{{ e.from_teacher.user.get_full_name|default:e.from_teacher.user.username }}</td>
+          <td class="text-xs">{{ e.get_category_display }}</td>
+          <td>
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {% if e.status == 'OPEN' %}bg-amber-100 text-amber-800
+              {% elif e.status == 'PROG' %}bg-blue-100 text-blue-800
+              {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+              {{ e.get_status_display }}
+            </span>
+          </td>
+          <td class="text-xs text-slate-500">{{ e.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-sm text-slate-500">No enquiries yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "django_htmx",
     "core",
     "teachers",
+    "schooladmin",
 ]
 
 MIDDLEWARE = [
@@ -100,7 +101,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL = "teachers:login"
-LOGIN_REDIRECT_URL = "teachers:dashboard"
+LOGIN_REDIRECT_URL = "core_home"
 LOGOUT_REDIRECT_URL = "teachers:login"
 
 

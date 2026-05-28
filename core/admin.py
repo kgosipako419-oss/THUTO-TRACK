@@ -5,11 +5,14 @@ from .models import (
     Attendance,
     BehaviorNote,
     ClassGroup,
+    Enquiry,
     Mark,
     School,
+    SchoolAdminProfile,
     Student,
     Subject,
     TeacherProfile,
+    TermSchedule,
     User,
 )
 
@@ -45,10 +48,17 @@ class ClassGroupAdmin(admin.ModelAdmin):
 
 @admin.register(TeacherProfile)
 class TeacherProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "school", "employee_id")
-    list_filter = ("school",)
+    list_display = ("user", "school", "employee_id", "is_active")
+    list_filter = ("school", "is_active")
     search_fields = ("user__username", "user__first_name", "user__last_name", "employee_id")
     filter_horizontal = ("subjects", "classes_taught")
+
+
+@admin.register(SchoolAdminProfile)
+class SchoolAdminProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "school", "title", "employee_id")
+    list_filter = ("school",)
+    search_fields = ("user__username", "user__first_name", "user__last_name", "title")
 
 
 @admin.register(Student)
@@ -81,3 +91,20 @@ class BehaviorNoteAdmin(admin.ModelAdmin):
     list_filter = ("category",)
     search_fields = ("student__first_name", "student__last_name", "note")
     autocomplete_fields = ("student", "teacher")
+
+
+@admin.register(TermSchedule)
+class TermScheduleAdmin(admin.ModelAdmin):
+    list_display = ("school", "academic_year", "term", "start_date", "end_date")
+    list_filter = ("school", "academic_year")
+    ordering = ("school", "academic_year", "term")
+
+
+@admin.register(Enquiry)
+class EnquiryAdmin(admin.ModelAdmin):
+    list_display = ("subject", "school", "from_teacher", "category", "status", "created_at")
+    list_filter = ("status", "category", "school")
+    search_fields = ("subject", "body", "from_teacher__user__username")
+    autocomplete_fields = ("from_teacher",)
+    readonly_fields = ("created_at", "updated_at", "school", "from_teacher", "subject", "body", "category")
+    fields = ("school", "from_teacher", "category", "subject", "body", "status", "response", "resolved_at", "created_at", "updated_at")

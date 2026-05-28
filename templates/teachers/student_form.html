@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'create' %}Add student{% else %}Edit {{ student.full_name }}{% endif %} &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% if mode == 'edit' %}{% url 'teachers:student_detail' student.id %}{% else %}{% url 'teachers:class_detail' class_group.id %}{% endif %}"
+     class="text-sm text-emerald-700 hover:underline">&larr; Cancel</a>
+  <h1 class="text-2xl font-bold mt-1">
+    {% if mode == 'create' %}Add student to {{ class_group.name }}{% else %}Edit student{% endif %}
+  </h1>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4 max-w-2xl">
+  {% csrf_token %}
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">First name</label>
+      <input type="text" name="first_name" value="{{ student.first_name }}" required
+             class="w-full border {% if errors.first_name %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.first_name %}<p class="text-xs text-red-600 mt-1">{{ errors.first_name }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Last name</label>
+      <input type="text" name="last_name" value="{{ student.last_name }}" required
+             class="w-full border {% if errors.last_name %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.last_name %}<p class="text-xs text-red-600 mt-1">{{ errors.last_name }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Student number</label>
+      <input type="text" name="student_number" value="{{ student.student_number }}" required
+             class="w-full font-mono text-sm border {% if errors.student_number %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.student_number %}<p class="text-xs text-red-600 mt-1">{{ errors.student_number }}</p>{% endif %}
+      <p class="text-xs text-slate-500 mt-1">Must be unique within the school.</p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Date of birth</label>
+      <input type="date" name="date_of_birth"
+             value="{% if student.date_of_birth %}{{ student.date_of_birth|date:'Y-m-d' }}{% endif %}"
+             class="w-full border {% if errors.date_of_birth %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.date_of_birth %}<p class="text-xs text-red-600 mt-1">{{ errors.date_of_birth }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Gender</label>
+      <select name="gender" class="w-full border border-slate-300 rounded px-3 py-2">
+        <option value="">—</option>
+        {% for v, label in genders %}
+          <option value="{{ v }}" {% if student.gender == v %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if mode == 'edit' %}
+    <div>
+      <label class="block text-sm font-medium mb-1">Class</label>
+      <select name="class_group" class="w-full border {% if errors.class_group %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+        {% for c in teacher_classes %}
+          <option value="{{ c.id }}" {% if c.id == student.class_group_id %}selected{% endif %}>{{ c.name }} ({{ c.academic_year }})</option>
+        {% endfor %}
+      </select>
+      {% if errors.class_group %}<p class="text-xs text-red-600 mt-1">{{ errors.class_group }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="border-t pt-3">
+    <h2 class="font-semibold mb-2 text-sm">Parent / guardian</h2>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Parent name</label>
+        <input type="text" name="parent_name" value="{{ student.parent_name }}"
+               class="w-full border border-slate-300 rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Parent phone</label>
+        <input type="text" name="parent_phone" value="{{ student.parent_phone }}"
+               placeholder="+267 71 000 000"
+               class="w-full border border-slate-300 rounded px-3 py-2">
+      </div>
+    </div>
+  </div>
+
+  {% if mode == 'edit' %}
+  <div class="border-t pt-3">
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_active" {% if student.is_active %}checked{% endif %}>
+      <span>Active enrolment</span>
+    </label>
+    <p class="text-xs text-slate-500 mt-1">Uncheck to keep records but hide the student from class listings.</p>
+  </div>
+  {% endif %}
+
+  <div class="flex justify-end gap-2 pt-2">
+    <a href="{% if mode == 'edit' %}{% url 'teachers:student_detail' student.id %}{% else %}{% url 'teachers:class_detail' class_group.id %}{% endif %}"
+       class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">
+      {% if mode == 'create' %}Add student{% else %}Save changes{% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}

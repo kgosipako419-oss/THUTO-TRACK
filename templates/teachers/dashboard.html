@@ -1,44 +1,137 @@
 {% extends "base.html" %}
 {% block title %}Dashboard &middot; ThutoTrack{% endblock %}
 {% block content %}
-<div class="mb-6">
-  <h1 class="text-2xl font-bold">Welcome, {{ teacher.user.first_name|default:teacher.user.username }}</h1>
-  <p class="text-slate-600 text-sm">{{ teacher.school.name }}</p>
-</div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-  <div class="bg-white rounded-lg shadow p-5">
-    <div class="text-sm text-slate-500">My classes</div>
-    <div class="text-3xl font-bold text-emerald-700">{{ classes|length }}</div>
+<div class="mb-6 flex items-start justify-between flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold">{{ teacher.user.get_full_name|default:teacher.user.username }}</h1>
+    <p class="text-slate-600 text-sm">{{ teacher.school.name }}{% if teacher.employee_id %} &middot; {{ teacher.employee_id }}{% endif %}</p>
+    <p class="text-slate-500 text-xs mt-1">{{ teacher.user.email }} &middot; {{ teacher.user.phone|default:"—" }}</p>
   </div>
-  <div class="bg-white rounded-lg shadow p-5">
-    <div class="text-sm text-slate-500">Attendance recorded today</div>
-    <div class="text-3xl font-bold text-emerald-700">{{ today_attendance_count }}</div>
-  </div>
-  <div class="bg-white rounded-lg shadow p-5">
-    <div class="text-sm text-slate-500">Subjects taught</div>
-    <div class="text-3xl font-bold text-emerald-700">{{ teacher.subjects.count }}</div>
-  </div>
-</div>
-
-<section class="bg-white rounded-lg shadow p-5 mb-6">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="font-semibold">My classes</h2>
-    <a href="{% url 'teachers:class_list' %}" class="text-sm text-emerald-700 hover:underline">View all</a>
-  </div>
-  {% if classes %}
-    <ul class="divide-y">
-      {% for c in classes %}
-        <li class="py-2 flex justify-between items-center">
-          <a href="{% url 'teachers:class_detail' c.id %}" class="text-emerald-800 hover:underline font-medium">{{ c.name }}</a>
-          <span class="text-xs text-slate-500">Grade {{ c.grade_level }} &middot; {{ c.academic_year }}</span>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="text-sm text-slate-500">You haven't been assigned to any classes yet. Ask your school admin to add you.</p>
+  {% if teacher_band %}
+    <div class="bg-white rounded-lg shadow p-3 text-right">
+      <div class="text-xs text-slate-500">Teacher performance ({{ year }})</div>
+      <div class="text-3xl font-bold text-emerald-700 leading-none">{{ overall_avg|floatformat:1 }}%</div>
+      <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full {{ teacher_band.1 }}">{{ teacher_band.0 }}</span>
+      <div class="text-xs text-slate-400 mt-1">avg across {{ overall_assessments }} assessment(s) you recorded</div>
+    </div>
   {% endif %}
-</section>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">My classes</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ classes|length }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Subjects taught</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ subjects|length }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Students</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ students_count }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Attendance rate ({{ year }})</div>
+    <div class="text-2xl font-bold text-emerald-700">
+      {% if attendance_rate is not None %}{{ attendance_rate|floatformat:1 }}%{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Open enquiries</div>
+    <div class="text-2xl font-bold {% if open_enquiries %}text-amber-700{% else %}text-slate-400{% endif %}">{{ open_enquiries }}</div>
+    <a href="{% url 'teachers:enquiry_list' %}" class="text-xs text-emerald-700 hover:underline">Manage</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+  <section class="bg-white rounded-lg shadow p-5 lg:col-span-1">
+    <h2 class="font-semibold mb-3">Student performance ({{ year }})</h2>
+    {% if overall_avg is not None %}
+      <div class="text-4xl font-bold text-emerald-700">{{ overall_avg|floatformat:1 }}%</div>
+      <p class="text-sm text-slate-600 mt-1">
+        across {{ overall_assessments }} assessment(s)<br>
+        for {{ overall_students_assessed }} student(s)
+      </p>
+    {% else %}
+      <p class="text-sm text-slate-500">No marks recorded this year yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="bg-white rounded-lg shadow p-5 lg:col-span-2">
+    <h2 class="font-semibold mb-3">Performance by subject ({{ year }})</h2>
+    {% if per_subject %}
+      <table class="w-full text-sm">
+        <thead class="text-left text-slate-500 border-b">
+          <tr>
+            <th class="py-2">Subject</th>
+            <th class="text-right">Assessments</th>
+            <th class="text-right">Students assessed</th>
+            <th class="text-right">Average</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for s in per_subject %}
+          <tr>
+            <td class="py-2">{{ s.subject__name }}</td>
+            <td class="text-right">{{ s.assessment_count }}</td>
+            <td class="text-right">{{ s.student_count }}</td>
+            <td class="text-right font-mono">
+              <span class="{% if s.avg_pct >= 70 %}text-emerald-700{% elif s.avg_pct >= 50 %}text-amber-600{% else %}text-red-600{% endif %} font-semibold">
+                {{ s.avg_pct|floatformat:1 }}%
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-sm text-slate-500">No marks recorded this year yet. Enter some via a class to see your subject-level performance here.</p>
+    {% endif %}
+  </section>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+  <section class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">My classes</h2>
+      <div class="flex gap-2">
+        <a href="{% url 'teachers:class_create' %}" class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1 rounded">+ New</a>
+        <a href="{% url 'teachers:class_list' %}" class="text-xs text-emerald-700 hover:underline self-center">View all</a>
+      </div>
+    </div>
+    {% if classes %}
+      <ul class="divide-y">
+        {% for c in classes %}
+          <li class="py-2 flex justify-between items-center">
+            <a href="{% url 'teachers:class_detail' c.id %}" class="text-emerald-800 hover:underline font-medium">{{ c.name }}</a>
+            <span class="text-xs text-slate-500">Grade {{ c.grade_level }} &middot; {{ c.academic_year }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-sm text-slate-500">You haven't been assigned to any classes yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">My subjects</h2>
+      <a href="{% url 'teachers:subjects_manage' %}" class="text-xs text-emerald-700 hover:underline self-center">Manage</a>
+    </div>
+    {% if subjects %}
+      <div class="flex flex-wrap gap-2">
+        {% for s in subjects %}
+          <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+            {{ s.name }} <span class="font-mono text-slate-400">{{ s.code }}</span>
+          </span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-slate-500">No subjects assigned yet. Add some from the Subjects page.</p>
+    {% endif %}
+  </section>
+</div>
 
 <section class="bg-white rounded-lg shadow p-5">
   <h2 class="font-semibold mb-3">Recent marks recorded</h2>

@@ -17,6 +17,9 @@
       <div class="flex items-center gap-4 text-sm">
         <a href="{% url 'teachers:dashboard' %}" class="hover:underline">Dashboard</a>
         <a href="{% url 'teachers:class_list' %}" class="hover:underline">My Classes</a>
+        <a href="{% url 'teachers:subjects_manage' %}" class="hover:underline">Subjects</a>
+        <a href="{% url 'teachers:school_calendar' %}" class="hover:underline">Calendar</a>
+        <a href="{% url 'teachers:enquiry_list' %}" class="hover:underline">Enquiries</a>
         {% if user.is_staff %}<a href="/admin/" class="hover:underline">Admin</a>{% endif %}
         <span class="opacity-80">{{ user.get_full_name|default:user.username }}</span>
         <form method="post" action="{% url 'teachers:logout' %}" class="inline">

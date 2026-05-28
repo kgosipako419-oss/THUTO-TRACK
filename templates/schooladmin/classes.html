@@ -1,0 +1,60 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Classes &middot; Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold">Classes</h1>
+    <p class="text-slate-500 text-sm">{{ classes|length }} at {{ school.name }}</p>
+  </div>
+  <a href="{% url 'schooladmin:class_create' %}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">+ New class</a>
+</div>
+
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-4 flex items-end gap-3">
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Year</label>
+    <select name="year" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="">All years</option>
+      {% for y in available_years %}
+        <option value="{{ y }}" {% if year_filter == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">Filter</button>
+  {% if year_filter %}<a href="{% url 'schooladmin:classes' %}" class="text-sm text-slate-500 hover:underline self-center">Clear</a>{% endif %}
+</form>
+
+<div class="bg-white rounded-lg shadow">
+  {% if classes %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2 px-4">Class</th>
+          <th>Grade</th>
+          <th>Year</th>
+          <th>Class teacher</th>
+          <th class="text-right">Active students</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for c in classes %}
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-medium">{{ c.name }}</td>
+          <td>{{ c.grade_level }}</td>
+          <td>{{ c.academic_year }}</td>
+          <td class="text-xs">
+            {% if c.class_teacher %}{{ c.class_teacher.user.get_full_name|default:c.class_teacher.user.username }}{% else %}<span class="text-slate-400">—</span>{% endif %}
+          </td>
+          <td class="text-right font-mono">{{ c.active_student_count }}</td>
+          <td class="px-4 text-right">
+            <a href="{% url 'schooladmin:class_edit' c.id %}" class="text-emerald-700 hover:underline text-xs">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="p-5 text-sm text-slate-500">No classes found.</p>
+  {% endif %}
+</div>
+{% endblock %}

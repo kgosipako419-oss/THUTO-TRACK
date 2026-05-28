@@ -14,9 +14,31 @@
       <div>{{ student.get_gender_display|default:"—" }}{% if student.date_of_birth %} &middot; born {{ student.date_of_birth }}{% endif %}</div>
       <div>Parent: {{ student.parent_name|default:"—" }}</div>
       <div>{{ student.parent_phone|default:"—" }}</div>
+      <div class="mt-2 flex gap-2 justify-end">
+        <a href="{% url 'teachers:student_edit' student.id %}" class="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1 rounded">Edit</a>
+        <a href="{% url 'teachers:student_delete' student.id %}" class="text-xs bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded">Delete</a>
+      </div>
     </div>
   </div>
 </div>
+
+<form method="get" action="{% url 'teachers:student_term_report' student.id %}" target="_blank"
+      class="bg-white rounded-lg shadow p-4 mb-6 flex items-end gap-3 flex-wrap">
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Term</label>
+    <select name="term" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      {% for v, label in terms %}<option value="{{ v }}">{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Year</label>
+    <input type="number" name="year" value="{{ year }}" min="2000" max="2100"
+           class="w-24 border border-slate-300 rounded px-3 py-2 text-sm">
+  </div>
+  <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">
+    Download term report (PDF)
+  </button>
+</form>
 
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
   <div class="bg-white rounded-lg shadow p-4">
@@ -114,7 +136,10 @@
   </section>
 
   <section class="bg-white rounded-lg shadow p-5">
-    <h2 class="font-semibold mb-3">Behavior notes</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Behavior notes</h2>
+      <a href="{% url 'teachers:add_behavior_note' student.id %}" class="text-sm bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1 rounded">+ Add note</a>
+    </div>
     {% if behavior_notes %}
       <ul class="divide-y text-sm">
         {% for n in behavior_notes %}

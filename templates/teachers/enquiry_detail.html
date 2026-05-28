@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ enquiry.subject }} &middot; Enquiries{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'teachers:enquiry_list' %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to my enquiries</a>
+  <h1 class="text-2xl font-bold mt-1">{{ enquiry.subject }}</h1>
+  <div class="flex gap-2 mt-2 text-xs">
+    <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">{{ enquiry.get_category_display }}</span>
+    <span class="px-2 py-0.5 rounded-full
+      {% if enquiry.status == 'OPEN' %}bg-amber-100 text-amber-800
+      {% elif enquiry.status == 'PROG' %}bg-blue-100 text-blue-800
+      {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+      {{ enquiry.get_status_display }}
+    </span>
+    <span class="text-slate-500">Sent {{ enquiry.created_at|date:"Y-m-d H:i" }}</span>
+  </div>
+</div>
+
+<div class="bg-white rounded-lg shadow p-5 mb-4">
+  <h2 class="font-semibold text-sm text-slate-500 mb-2">Your message</h2>
+  <p class="whitespace-pre-wrap text-sm">{{ enquiry.body }}</p>
+</div>
+
+<div class="bg-white rounded-lg shadow p-5">
+  <h2 class="font-semibold text-sm text-slate-500 mb-2">Response from admin / HR</h2>
+  {% if enquiry.response %}
+    <p class="whitespace-pre-wrap text-sm">{{ enquiry.response }}</p>
+    {% if enquiry.resolved_at %}
+      <p class="text-xs text-slate-500 mt-3">Resolved {{ enquiry.resolved_at|date:"Y-m-d H:i" }}</p>
+    {% endif %}
+  {% else %}
+    <p class="text-sm text-slate-500">No response yet. Admin will reply via this thread.</p>
+  {% endif %}
+</div>
+{% endblock %}

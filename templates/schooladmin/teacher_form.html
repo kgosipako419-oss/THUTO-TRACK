@@ -1,0 +1,119 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}{% if mode == 'create' %}New teacher{% else %}Edit {{ profile.user }}{% endif %} &middot; Admin{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'schooladmin:teachers' %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to teachers</a>
+  <h1 class="text-2xl font-bold mt-1">
+    {% if mode == 'create' %}New teacher{% else %}Edit teacher{% endif %}
+  </h1>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4 max-w-3xl">
+  {% csrf_token %}
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">First name</label>
+      <input type="text" name="first_name" required value="{{ values.first_name|default:'' }}"
+             class="w-full border {% if errors.first_name %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.first_name %}<p class="text-xs text-red-600 mt-1">{{ errors.first_name }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Last name</label>
+      <input type="text" name="last_name" required value="{{ values.last_name|default:'' }}"
+             class="w-full border {% if errors.last_name %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.last_name %}<p class="text-xs text-red-600 mt-1">{{ errors.last_name }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Username</label>
+      <input type="text" name="username" value="{{ values.username|default:'' }}"
+             {% if mode == 'create' %}required{% else %}readonly{% endif %}
+             class="w-full font-mono text-sm border {% if errors.username %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2 {% if mode == 'edit' %}bg-slate-100{% endif %}">
+      {% if errors.username %}<p class="text-xs text-red-600 mt-1">{{ errors.username }}</p>{% endif %}
+      {% if mode == 'edit' %}<p class="text-xs text-slate-500 mt-1">Username can't be changed.</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Employee ID</label>
+      <input type="text" name="employee_id" value="{{ values.employee_id|default:'' }}"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Email</label>
+      <input type="email" name="email" value="{{ values.email|default:'' }}"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Phone</label>
+      <input type="text" name="phone" value="{{ values.phone|default:'' }}" placeholder="+267 71 000 000"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">
+      {% if mode == 'create' %}Password{% else %}New password (leave blank to keep existing){% endif %}
+    </label>
+    <input type="password" name="password" {% if mode == 'create' %}required{% endif %} autocomplete="new-password"
+           class="w-full border {% if errors.password %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+    {% if errors.password %}<p class="text-xs text-red-600 mt-1">{{ errors.password }}</p>{% endif %}
+    <p class="text-xs text-slate-500 mt-1">At least 8 characters.</p>
+  </div>
+
+  <div class="border-t pt-3">
+    <h2 class="font-semibold mb-2 text-sm">Subjects taught</h2>
+    {% if subjects %}
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {% for s in subjects %}
+          <label class="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="subjects" value="{{ s.id }}"
+                   {% if s.id in selected_subject_ids %}checked{% endif %}>
+            <span>{{ s.name }} <span class="text-xs text-slate-400 font-mono">{{ s.code }}</span></span>
+          </label>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-slate-500">No subjects defined yet. Create some on the Subjects page first.</p>
+    {% endif %}
+  </div>
+
+  <div class="border-t pt-3">
+    <h2 class="font-semibold mb-2 text-sm">Classes</h2>
+    {% if classes %}
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {% for c in classes %}
+          <label class="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="classes" value="{{ c.id }}"
+                   {% if c.id in selected_class_ids %}checked{% endif %}>
+            <span>{{ c.name }} <span class="text-xs text-slate-400">{{ c.academic_year }}</span></span>
+          </label>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-slate-500">No classes defined yet.</p>
+    {% endif %}
+  </div>
+
+  {% if mode == 'edit' %}
+  <div class="border-t pt-3">
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_active" {% if is_active_checked %}checked{% endif %}>
+      <span>Active</span>
+    </label>
+    <p class="text-xs text-slate-500 mt-1">Inactive teachers can't log in and are hidden from teacher counts.</p>
+  </div>
+  {% endif %}
+
+  <div class="flex justify-end gap-2 pt-2">
+    <a href="{% url 'schooladmin:teachers' %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">
+      {% if mode == 'create' %}Create teacher{% else %}Save changes{% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}

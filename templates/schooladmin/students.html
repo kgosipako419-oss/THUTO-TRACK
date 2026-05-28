@@ -1,0 +1,74 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Students &middot; Admin{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Students</h1>
+  <p class="text-slate-500 text-sm">{{ students|length }} at {{ school.name }}</p>
+</div>
+
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+  <div class="md:col-span-2">
+    <label class="block text-xs font-medium text-slate-500 mb-1">Search</label>
+    <input type="text" name="q" value="{{ search }}" placeholder="Name, student number, parent phone..."
+           class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Class</label>
+    <select name="class" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="">All classes</option>
+      {% for c in all_classes %}
+        <option value="{{ c.id }}" {% if class_filter == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }} ({{ c.academic_year }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
+    <select name="status" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="">All</option>
+      <option value="active" {% if status_filter == "active" %}selected{% endif %}>Active</option>
+      <option value="inactive" {% if status_filter == "inactive" %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+  <div class="md:col-span-4 flex gap-2">
+    <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">Filter</button>
+    {% if search or class_filter or status_filter %}
+      <a href="{% url 'schooladmin:students' %}" class="text-sm text-slate-500 hover:underline self-center">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<div class="bg-white rounded-lg shadow">
+  {% if students %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2 px-4">Name</th>
+          <th>Student no.</th>
+          <th>Class</th>
+          <th>Parent phone</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for s in students %}
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-medium">{{ s.first_name }} {{ s.last_name }}</td>
+          <td class="font-mono text-xs">{{ s.student_number }}</td>
+          <td class="text-xs">{{ s.class_group.name }}</td>
+          <td class="text-xs">{{ s.parent_phone|default:"—" }}</td>
+          <td>
+            {% if s.is_active %}
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Active</span>
+            {% else %}
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Inactive</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="p-5 text-sm text-slate-500">No students match.</p>
+  {% endif %}
+</div>
+{% endblock %}

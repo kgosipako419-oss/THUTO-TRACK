@@ -82,6 +82,22 @@ class TeacherProfile(models.Model):
     employee_id = models.CharField(max_length=30, blank=True)
     subjects = models.ManyToManyField(Subject, related_name="teachers", blank=True)
     classes_taught = models.ManyToManyField(ClassGroup, related_name="teachers", blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("user__last_name", "user__first_name")
+
+    def __str__(self) -> str:
+        return f"{self.user} ({self.school.name})"
+
+
+class SchoolAdminProfile(models.Model):
+    """A school admin / HR user, with optional title."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="school_admin_profile")
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="admins")
+    title = models.CharField(max_length=100, blank=True, help_text="e.g. 'Deputy Head', 'HR Manager'")
+    employee_id = models.CharField(max_length=30, blank=True)
 
     class Meta:
         ordering = ("user__last_name", "user__first_name")
@@ -140,6 +156,74 @@ class Term(models.IntegerChoices):
     TERM_1 = 1, "Term 1"
     TERM_2 = 2, "Term 2"
     TERM_3 = 3, "Term 3"
+
+
+class TermSchedule(models.Model):
+    """Per-school date range for a term in a given academic year.
+
+    Used to scope attendance and behavior notes when generating term reports.
+    """
+
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="term_schedules")
+    academic_year = models.PositiveSmallIntegerField()
+    term = models.PositiveSmallIntegerField(choices=Term.choices)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        ordering = ("academic_year", "term")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("school", "academic_year", "term"),
+                name="unique_term_per_school_year",
+            ),
+            models.CheckConstraint(
+                check=models.Q(end_date__gte=models.F("start_date")),
+                name="term_end_after_start",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.school.name} — Term {self.term} {self.academic_year}"
+
+
+class Enquiry(models.Model):
+    """A message a teacher sends to school admin / HR. Admin handles via Django admin."""
+
+    class Category(models.TextChoices):
+        HR = "HR", "HR"
+        ADMIN = "ADMIN", "Administration"
+        TECH = "TECH", "Technical / ThutoTrack"
+        ACADEMIC = "ACAD", "Academic"
+        OTHER = "OTHER", "Other"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Open"
+        IN_PROGRESS = "PROG", "In progress"
+        RESOLVED = "DONE", "Resolved"
+
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="enquiries")
+    from_teacher = models.ForeignKey(
+        TeacherProfile, on_delete=models.CASCADE, related_name="enquiries",
+    )
+    category = models.CharField(max_length=10, choices=Category.choices, default=Category.OTHER)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    response = models.TextField(blank=True, help_text="Filled in by admin/HR")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name_plural = "Enquiries"
+        indexes = [
+            models.Index(fields=("school", "status")),
+        ]
+
+    def __str__(self) -> str:
+        return f"[{self.get_status_display()}] {self.subject}"
 
 
 class Mark(models.Model):

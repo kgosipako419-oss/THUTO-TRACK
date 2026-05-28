@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Add behavior note &middot; {{ student.full_name }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'teachers:student_detail' student.id %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to {{ student.full_name }}</a>
+  <h1 class="text-2xl font-bold mt-1">Add behavior note</h1>
+  <p class="text-sm text-slate-500">{{ student.full_name }} &middot; {{ student.class_group.name }}</p>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4 max-w-2xl">
+  {% csrf_token %}
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Category</label>
+    <select name="category" class="w-full border border-slate-300 rounded px-3 py-2">
+      {% for v, label in categories %}
+        <option value="{{ v }}" {% if v == 'NEU' %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Note</label>
+    <textarea name="note" rows="5" required
+              placeholder="What did you observe? Keep it specific and factual."
+              class="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+    <p class="text-xs text-slate-500 mt-1">This will appear on the student's profile and their term report.</p>
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <a href="{% url 'teachers:student_detail' student.id %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">Save note</button>
+  </div>
+</form>
+{% endblock %}

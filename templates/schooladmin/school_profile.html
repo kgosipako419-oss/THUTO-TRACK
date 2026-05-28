@@ -1,0 +1,60 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}School profile &middot; Admin{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">School profile</h1>
+  <p class="text-slate-500 text-sm">Edit the school's basic info. Code can only be changed in Django admin.</p>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4 max-w-2xl">
+  {% csrf_token %}
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="col-span-2">
+      <label class="block text-sm font-medium mb-1">School name</label>
+      <input type="text" name="name" required value="{{ school.name }}"
+             class="w-full border {% if errors.name %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% if errors.name %}<p class="text-xs text-red-600 mt-1">{{ errors.name }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">School code</label>
+      <input type="text" value="{{ school.code }}" readonly
+             class="w-full font-mono text-sm border border-slate-300 rounded px-3 py-2 bg-slate-100">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Region</label>
+      <input type="text" name="region" value="{{ school.region }}"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Address</label>
+    <input type="text" name="address" value="{{ school.address }}"
+           class="w-full border border-slate-300 rounded px-3 py-2">
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Phone</label>
+      <input type="text" name="phone" value="{{ school.phone }}"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Email</label>
+      <input type="email" name="email" value="{{ school.email }}"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Principal name</label>
+    <input type="text" name="principal_name" value="{{ school.principal_name }}"
+           class="w-full border border-slate-300 rounded px-3 py-2">
+  </div>
+
+  <div class="flex justify-end gap-2 pt-2">
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">Save changes</button>
+  </div>
+</form>
+{% endblock %}

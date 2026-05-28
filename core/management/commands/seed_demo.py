@@ -10,12 +10,12 @@ Creates:
     - subjects, one class, and a handful of students
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from core.models import ClassGroup, School, Student, Subject, TeacherProfile, User
+from core.models import ClassGroup, School, SchoolAdminProfile, Student, Subject, TeacherProfile, TermSchedule, User
 
 
 class Command(BaseCommand):
@@ -43,6 +43,22 @@ class Command(BaseCommand):
         else:
             self.stdout.write("Superuser 'admin' already exists, skipping.")
 
+        # Create a non-superuser school admin for portal testing
+        principal_user, created = User.objects.get_or_create(
+            username="mma_pula",
+            defaults={
+                "first_name": "Pula",
+                "last_name": "Mokgothu",
+                "email": "principal@demoschool.example",
+                "role": User.Role.SCHOOL_ADMIN,
+                "phone": "+267 71 100 001",
+            },
+        )
+        if created:
+            principal_user.set_password("admin123")
+            principal_user.save()
+            self.stdout.write(self.style.SUCCESS("Created school admin: mma_pula / admin123"))
+
         school, _ = School.objects.get_or_create(
             code="DEMO-001",
             defaults={
@@ -54,6 +70,29 @@ class Command(BaseCommand):
                 "principal_name": "Mma Kgomotso",
             },
         )
+
+        SchoolAdminProfile.objects.get_or_create(
+            user=principal_user,
+            defaults={"school": school, "title": "Principal", "employee_id": "A-001"},
+        )
+        # Link the seeded superuser to the same school too
+        SchoolAdminProfile.objects.get_or_create(
+            user=admin, defaults={"school": school, "title": "System admin"},
+        )
+
+        # Default Botswana-style 3-term schedule for the current year
+        term_dates = [
+            (1, date(year, 1, 15), date(year, 4, 10)),
+            (2, date(year, 5, 5), date(year, 8, 7)),
+            (3, date(year, 9, 1), date(year, 12, 4)),
+        ]
+        for term_num, start, end in term_dates:
+            TermSchedule.objects.get_or_create(
+                school=school,
+                academic_year=year,
+                term=term_num,
+                defaults={"start_date": start, "end_date": end},
+            )
 
         subject_data = [
             ("Mathematics", "MATH"),
@@ -120,6 +159,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
         self.stdout.write("")
-        self.stdout.write("Log in at /teachers/login/ with:")
-        self.stdout.write("    teacher: mr_kgosi / teacher123")
-        self.stdout.write("    admin (for /admin/): admin / admin123")
+        self.stdout.write("Log in at / with:")
+        self.stdout.write("    teacher portal: mr_kgosi / teacher123")
+        self.stdout.write("    school admin portal: mma_pula / admin123")
+        self.stdout.write("    Django admin (/admin/): admin / admin123")

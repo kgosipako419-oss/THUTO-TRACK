@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}New enquiry &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'teachers:enquiry_list' %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to my enquiries</a>
+  <h1 class="text-2xl font-bold mt-1">Send enquiry to admin / HR</h1>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4 max-w-2xl">
+  {% csrf_token %}
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Category</label>
+    <select name="category" class="w-full border {% if errors.category %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+      {% for v, label in categories %}
+        <option value="{{ v }}" {% if values.category == v %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.category %}<p class="text-xs text-red-600 mt-1">{{ errors.category }}</p>{% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Subject</label>
+    <input type="text" name="subject" required maxlength="200" value="{{ values.subject|default:'' }}"
+           class="w-full border {% if errors.subject %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2">
+    {% if errors.subject %}<p class="text-xs text-red-600 mt-1">{{ errors.subject }}</p>{% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Message</label>
+    <textarea name="body" rows="6" required
+              class="w-full border {% if errors.body %}border-red-500{% else %}border-slate-300{% endif %} rounded px-3 py-2"
+              placeholder="Describe your enquiry. Be specific so admin can help quickly.">{{ values.body|default:'' }}</textarea>
+    {% if errors.body %}<p class="text-xs text-red-600 mt-1">{{ errors.body }}</p>{% endif %}
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <a href="{% url 'teachers:enquiry_list' %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">Send enquiry</button>
+  </div>
+</form>
+{% endblock %}

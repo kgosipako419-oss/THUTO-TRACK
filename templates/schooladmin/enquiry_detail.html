@@ -1,0 +1,47 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}{{ enquiry.subject }} &middot; Enquiry{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'schooladmin:enquiries' %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to inbox</a>
+  <h1 class="text-2xl font-bold mt-1">{{ enquiry.subject }}</h1>
+  <div class="flex gap-2 mt-2 text-xs flex-wrap">
+    <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">{{ enquiry.get_category_display }}</span>
+    <span class="px-2 py-0.5 rounded-full
+      {% if enquiry.status == 'OPEN' %}bg-amber-100 text-amber-800
+      {% elif enquiry.status == 'PROG' %}bg-blue-100 text-blue-800
+      {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+      {{ enquiry.get_status_display }}
+    </span>
+    <span class="text-slate-500">From {{ enquiry.from_teacher.user.get_full_name|default:enquiry.from_teacher.user.username }} &middot; {{ enquiry.created_at|date:"Y-m-d H:i" }}</span>
+  </div>
+</div>
+
+<div class="bg-white rounded-lg shadow p-5 mb-4">
+  <h2 class="font-semibold text-sm text-slate-500 mb-2">Teacher's message</h2>
+  <p class="whitespace-pre-wrap text-sm">{{ enquiry.body }}</p>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4">
+  {% csrf_token %}
+  <h2 class="font-semibold">Reply &amp; update status</h2>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Status</label>
+    <select name="status" class="w-full md:w-48 border border-slate-300 rounded px-3 py-2 text-sm">
+      {% for v, label in statuses %}
+        <option value="{{ v }}" {% if v == enquiry.status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Response (visible to the teacher)</label>
+    <textarea name="response" rows="6" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="Write your reply...">{{ enquiry.response }}</textarea>
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <a href="{% url 'schooladmin:enquiries' %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">Save reply</button>
+  </div>
+</form>
+{% endblock %}

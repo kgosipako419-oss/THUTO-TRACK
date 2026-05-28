@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}My Classes &middot; ThutoTrack{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">My classes</h1>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">My classes</h1>
+  <a href="{% url 'teachers:class_create' %}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">+ New class</a>
+</div>
 {% if classes %}
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     {% for c in classes %}

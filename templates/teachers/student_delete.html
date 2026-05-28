@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Delete {{ student.full_name }} &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'teachers:student_detail' student.id %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to {{ student.full_name }}</a>
+  <h1 class="text-2xl font-bold mt-1 text-red-700">Delete student permanently?</h1>
+</div>
+
+<div class="bg-white rounded-lg shadow p-5 max-w-2xl">
+  <p class="mb-3">You're about to permanently delete <span class="font-semibold">{{ student.full_name }}</span>
+    ({{ student.student_number }}) from <span class="font-medium">{{ student.class_group.name }}</span>.</p>
+
+  <div class="bg-red-50 border border-red-200 rounded p-3 text-sm mb-4">
+    <p class="font-semibold text-red-800 mb-1">This will also delete:</p>
+    <ul class="list-disc list-inside text-red-700 space-y-0.5">
+      <li>{{ impact.marks }} mark record(s)</li>
+      <li>{{ impact.attendance }} attendance record(s)</li>
+      <li>{{ impact.behavior_notes }} behavior note(s)</li>
+    </ul>
+    <p class="text-xs text-red-700 mt-2">This cannot be undone.</p>
+  </div>
+
+  <p class="text-sm text-slate-600 mb-2">
+    If you only want to hide the student from class lists, use
+    <a href="{% url 'teachers:student_edit' student.id %}" class="text-emerald-700 hover:underline">Edit</a>
+    and uncheck "Active enrolment" instead.
+  </p>
+
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm font-medium mb-1">
+        Type <span class="font-mono">{{ student.student_number }}</span> to confirm deletion
+      </label>
+      <input type="text" name="confirm" required autocomplete="off"
+             class="w-full font-mono border border-slate-300 rounded px-3 py-2">
+    </div>
+    <div class="flex justify-end gap-2">
+      <a href="{% url 'teachers:student_detail' student.id %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+      <button type="submit" class="bg-red-700 hover:bg-red-800 text-white px-5 py-2 rounded">
+        Delete permanently
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

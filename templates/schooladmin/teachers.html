@@ -1,0 +1,65 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Teachers &middot; Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold">Teachers</h1>
+    <p class="text-slate-500 text-sm">{{ teachers|length }} at {{ school.name }}</p>
+  </div>
+  <a href="{% url 'schooladmin:teacher_create' %}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">+ New teacher</a>
+</div>
+
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-4 flex items-end gap-3">
+  <div class="flex-1">
+    <input type="text" name="q" value="{{ search }}" placeholder="Search by name or employee ID..."
+           class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+  </div>
+  <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">Search</button>
+  {% if search %}<a href="{% url 'schooladmin:teachers' %}" class="text-sm text-slate-500 hover:underline self-center">Clear</a>{% endif %}
+</form>
+
+<div class="bg-white rounded-lg shadow">
+  {% if teachers %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2 px-4">Name</th>
+          <th>Username</th>
+          <th>Employee ID</th>
+          <th>Subjects</th>
+          <th>Classes</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for t in teachers %}
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-medium">{{ t.user.get_full_name|default:t.user.username }}</td>
+          <td class="font-mono text-xs">{{ t.user.username }}</td>
+          <td class="text-xs">{{ t.employee_id|default:"—" }}</td>
+          <td class="text-xs">
+            {% for s in t.subjects.all %}<span class="inline-block bg-slate-100 px-2 py-0.5 rounded mr-1">{{ s.code }}</span>{% empty %}—{% endfor %}
+          </td>
+          <td class="text-xs">
+            {% for c in t.classes_taught.all %}<span class="inline-block bg-slate-100 px-2 py-0.5 rounded mr-1">{{ c.name }}</span>{% empty %}—{% endfor %}
+          </td>
+          <td>
+            {% if t.is_active %}
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Active</span>
+            {% else %}
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="px-4 text-right">
+            <a href="{% url 'schooladmin:teacher_edit' t.id %}" class="text-emerald-700 hover:underline text-xs">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="p-5 text-sm text-slate-500">No teachers match your search.</p>
+  {% endif %}
+</div>
+{% endblock %}

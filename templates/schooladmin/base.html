@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin &middot; ThutoTrack{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  {% if user.is_authenticated %}
+  <nav class="bg-slate-800 text-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-3">
+      <a href="{% url 'schooladmin:dashboard' %}" class="font-bold text-lg flex items-center gap-2">
+        <span class="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded">ADMIN</span>
+        ThutoTrack
+      </a>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="{% url 'schooladmin:dashboard' %}" class="hover:underline">Dashboard</a>
+        <a href="{% url 'schooladmin:enquiries' %}" class="hover:underline">Enquiries{% if open_enquiries_count %} <span class="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ open_enquiries_count }}</span>{% endif %}</a>
+        <a href="{% url 'schooladmin:teachers' %}" class="hover:underline">Teachers</a>
+        <a href="{% url 'schooladmin:students' %}" class="hover:underline">Students</a>
+        <a href="{% url 'schooladmin:classes' %}" class="hover:underline">Classes</a>
+        <a href="{% url 'schooladmin:subjects' %}" class="hover:underline">Subjects</a>
+        <a href="{% url 'schooladmin:calendar' %}" class="hover:underline">Calendar</a>
+        <a href="{% url 'schooladmin:school_profile' %}" class="hover:underline">School</a>
+        <span class="opacity-70 border-l border-slate-600 pl-4">{{ user.get_full_name|default:user.username }}</span>
+        <form method="post" action="{% url 'teachers:logout' %}" class="inline">
+          {% csrf_token %}
+          <button class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded">Log out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    {% if messages %}
+      <div class="mb-4 space-y-2">
+        {% for m in messages %}
+          <div class="px-4 py-2 rounded {% if m.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="mt-12 py-6 text-center text-xs text-slate-500">
+    ThutoTrack &middot; School admin portal
+  </footer>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Enquiries &middot; Admin{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Enquiries inbox</h1>
+  <p class="text-slate-500 text-sm">{{ school.name }}</p>
+</div>
+
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-4 flex items-end gap-3 flex-wrap">
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
+    <select name="status" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="">All</option>
+      {% for v, label in statuses %}
+        <option value="{{ v }}" {% if v == status_filter %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Category</label>
+    <select name="category" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="">All</option>
+      {% for v, label in categories %}
+        <option value="{{ v }}" {% if v == category_filter %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">Filter</button>
+  {% if status_filter or category_filter %}
+    <a href="{% url 'schooladmin:enquiries' %}" class="text-sm text-slate-500 hover:underline self-center">Clear</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-lg shadow">
+  {% if enquiries %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2 px-4">Subject</th>
+          <th>From</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Sent</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for e in enquiries %}
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4"><a href="{% url 'schooladmin:enquiry_detail' e.id %}" class="text-emerald-700 hover:underline font-medium">{{ e.subject }}</a></td>
+          <td>{{ e.from_teacher.user.get_full_name|default:e.from_teacher.user.username }}</td>
+          <td class="text-xs">{{ e.get_category_display }}</td>
+          <td>
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {% if e.status == 'OPEN' %}bg-amber-100 text-amber-800
+              {% elif e.status == 'PROG' %}bg-blue-100 text-blue-800
+              {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+              {{ e.get_status_display }}
+            </span>
+          </td>
+          <td class="text-xs text-slate-500">{{ e.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="p-5 text-sm text-slate-500">No enquiries match these filters.</p>
+  {% endif %}
+</div>
+{% endblock %}

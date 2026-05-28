@@ -9,9 +9,34 @@
   <div class="flex gap-2">
     <a href="{% url 'teachers:enter_marks' class_group.id %}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">Enter marks</a>
     <a href="{% url 'teachers:enter_attendance' class_group.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Take attendance</a>
+    <a href="{% url 'teachers:student_create' class_group.id %}" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">+ Add student</a>
     <a href="{% url 'teachers:bulk_upload_students' class_group.id %}" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">Upload students</a>
   </div>
 </div>
+
+<form method="get" action="{% url 'teachers:class_term_reports' class_group.id %}" target="_blank"
+      class="bg-white rounded-lg shadow p-4 mb-4 flex items-end gap-3 flex-wrap">
+  <div class="text-sm text-slate-600 mr-auto">
+    <div class="font-semibold text-slate-800">Generate term reports</div>
+    <div class="text-xs">One combined PDF for the whole class &mdash; one page per student.</div>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Term</label>
+    <select name="term" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="1">Term 1</option>
+      <option value="2">Term 2</option>
+      <option value="3">Term 3</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Year</label>
+    <input type="number" name="year" value="{{ class_group.academic_year }}" min="2000" max="2100"
+           class="w-24 border border-slate-300 rounded px-3 py-2 text-sm">
+  </div>
+  <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">
+    Download class reports (PDF)
+  </button>
+</form>
 
 <section class="bg-white rounded-lg shadow p-5">
   <h2 class="font-semibold mb-3">Students ({{ students|length }})</h2>

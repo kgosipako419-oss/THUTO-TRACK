@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}New class &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'teachers:class_list' %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to my classes</a>
+  <h1 class="text-2xl font-bold mt-1">Create a new class</h1>
+  <p class="text-sm text-slate-500">You'll be auto-assigned as the class teacher.</p>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4 max-w-xl">
+  {% csrf_token %}
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Class name</label>
+    <input type="text" name="name" required placeholder="e.g. Form 2A, Standard 5B"
+           class="w-full border border-slate-300 rounded px-3 py-2">
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Grade / Form level</label>
+      <input type="number" name="grade_level" required min="1" max="12" value="8"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+      <p class="text-xs text-slate-500 mt-1">Numeric grade/standard/form.</p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Academic year</label>
+      <input type="number" name="academic_year" required min="2000" max="2100" value="{{ current_year }}"
+             class="w-full border border-slate-300 rounded px-3 py-2">
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <a href="{% url 'teachers:class_list' %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded">Create class</button>
+  </div>
+</form>
+{% endblock %}
