@@ -24,7 +24,7 @@ The goal is to make it easy for teachers to record results and for parents to se
 - Generate term report PDFs
 
 **For Parents**
-- Check marks and attendance via USSD *123*456#
+- Check marks and attendance via USSD **123**456#
 - Get updates via WhatsApp and SMS
 - View progress over time on web/mobile
 
