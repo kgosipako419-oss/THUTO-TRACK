@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}My Classes &middot; ThutoTrack{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">My classes</h1>
+{% if classes %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for c in classes %}
+      <a href="{% url 'teachers:class_detail' c.id %}"
+         class="bg-white rounded-lg shadow p-5 hover:shadow-md transition">
+        <div class="text-lg font-semibold text-emerald-800">{{ c.name }}</div>
+        <div class="text-sm text-slate-500">Grade {{ c.grade_level }} &middot; {{ c.academic_year }}</div>
+        <div class="text-xs text-slate-400 mt-1">{{ c.school.name }}</div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-slate-500">No classes yet.</p>
+{% endif %}
+{% endblock %}

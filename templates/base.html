@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ThutoTrack{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📘</text></svg>">
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  {% if user.is_authenticated %}
+  <nav class="bg-emerald-700 text-white shadow">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{% url 'teachers:dashboard' %}" class="font-bold text-lg">ThutoTrack</a>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="{% url 'teachers:dashboard' %}" class="hover:underline">Dashboard</a>
+        <a href="{% url 'teachers:class_list' %}" class="hover:underline">My Classes</a>
+        {% if user.is_staff %}<a href="/admin/" class="hover:underline">Admin</a>{% endif %}
+        <span class="opacity-80">{{ user.get_full_name|default:user.username }}</span>
+        <form method="post" action="{% url 'teachers:logout' %}" class="inline">
+          {% csrf_token %}
+          <button class="bg-emerald-800 hover:bg-emerald-900 px-3 py-1 rounded">Log out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% if messages %}
+      <div class="mb-4 space-y-2">
+        {% for m in messages %}
+          <div class="px-4 py-2 rounded {% if m.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="mt-12 py-6 text-center text-xs text-slate-500">
+    ThutoTrack &middot; Botswana Schools Progress Tracker
+  </footer>
+</body>
+</html>

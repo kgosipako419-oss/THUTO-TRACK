@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}No teacher profile &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto bg-white rounded-lg shadow p-8 mt-12 text-center">
+  <h1 class="text-xl font-bold mb-2">No teacher profile</h1>
+  <p class="text-slate-600">Your account is signed in, but it isn't linked to a teacher profile yet.</p>
+  <p class="text-slate-600 mt-2">Ask your school admin to set up your profile in the admin panel.</p>
+  <form method="post" action="{% url 'teachers:logout' %}" class="mt-6">
+    {% csrf_token %}
+    <button class="text-sm text-emerald-700 hover:underline">Log out</button>
+  </form>
+</div>
+{% endblock %}

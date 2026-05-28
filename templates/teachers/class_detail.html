@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ class_group.name }} &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">{{ class_group.name }}</h1>
+    <p class="text-sm text-slate-500">Grade {{ class_group.grade_level }} &middot; {{ class_group.academic_year }} &middot; {{ class_group.school.name }}</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'teachers:enter_marks' class_group.id %}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">Enter marks</a>
+    <a href="{% url 'teachers:enter_attendance' class_group.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Take attendance</a>
+  </div>
+</div>
+
+<section class="bg-white rounded-lg shadow p-5">
+  <h2 class="font-semibold mb-3">Students ({{ students|length }})</h2>
+  {% if students %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2">#</th>
+          <th>Name</th>
+          <th>Student no.</th>
+          <th>Parent contact</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for s in students %}
+        <tr>
+          <td class="py-2">{{ forloop.counter }}</td>
+          <td>{{ s.full_name }}</td>
+          <td class="font-mono text-xs">{{ s.student_number }}</td>
+          <td class="text-xs text-slate-500">{{ s.parent_phone|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-sm text-slate-500">No students enrolled in this class yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

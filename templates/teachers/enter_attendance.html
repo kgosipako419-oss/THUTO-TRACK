@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Attendance &middot; {{ class_group.name }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'teachers:class_detail' class_group.id %}" class="text-sm text-emerald-700 hover:underline">&larr; Back to {{ class_group.name }}</a>
+  <h1 class="text-2xl font-bold mt-1">Take attendance &mdash; {{ class_group.name }}</h1>
+</div>
+
+<form method="post" class="bg-white rounded-lg shadow p-5 space-y-4">
+  {% csrf_token %}
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Date</label>
+    <input type="date" name="date" value="{{ today }}"
+           class="border border-slate-300 rounded px-2 py-2">
+  </div>
+
+  <table class="w-full text-sm">
+    <thead class="text-left text-slate-500 border-b">
+      <tr><th class="py-2 w-12">#</th><th>Student</th><th class="w-64">Status</th></tr>
+    </thead>
+    <tbody class="divide-y">
+      {% for s in students %}
+      <tr>
+        <td class="py-2">{{ forloop.counter }}</td>
+        <td>{{ s.full_name }} <span class="text-xs text-slate-400 font-mono">({{ s.student_number }})</span></td>
+        <td>
+          <div class="flex gap-3 text-sm">
+            {% for v, label in statuses %}
+              <label class="flex items-center gap-1">
+                <input type="radio" name="status_{{ s.id }}" value="{{ v }}" {% if v == 'P' %}checked{% endif %}>
+                <span>{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="py-4 text-center text-slate-500">No students in this class.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="flex justify-end gap-2 pt-2">
+    <a href="{% url 'teachers:class_detail' class_group.id %}" class="px-4 py-2 text-slate-600 hover:underline">Cancel</a>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded">Save attendance</button>
+  </div>
+</form>
+{% endblock %}
