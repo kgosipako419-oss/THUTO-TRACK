@@ -13,4 +13,7 @@ urlpatterns = [
     path("classes/<int:class_id>/", views.class_detail, name="class_detail"),
     path("classes/<int:class_id>/marks/", views.enter_marks, name="enter_marks"),
     path("classes/<int:class_id>/attendance/", views.enter_attendance, name="enter_attendance"),
+    path("classes/<int:class_id>/upload/", views.bulk_upload_students, name="bulk_upload_students"),
+    path("classes/<int:class_id>/upload/template/", views.bulk_upload_template, name="bulk_upload_template"),
+    path("students/<int:student_id>/", views.student_detail, name="student_detail"),
 ]

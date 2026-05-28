@@ -9,6 +9,7 @@
   <div class="flex gap-2">
     <a href="{% url 'teachers:enter_marks' class_group.id %}" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">Enter marks</a>
     <a href="{% url 'teachers:enter_attendance' class_group.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Take attendance</a>
+    <a href="{% url 'teachers:bulk_upload_students' class_group.id %}" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">Upload students</a>
   </div>
 </div>
 
@@ -28,7 +29,7 @@
         {% for s in students %}
         <tr>
           <td class="py-2">{{ forloop.counter }}</td>
-          <td>{{ s.full_name }}</td>
+          <td><a href="{% url 'teachers:student_detail' s.id %}" class="text-emerald-800 hover:underline">{{ s.full_name }}</a></td>
           <td class="font-mono text-xs">{{ s.student_number }}</td>
           <td class="text-xs text-slate-500">{{ s.parent_phone|default:"—" }}</td>
         </tr>
