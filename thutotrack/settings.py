@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "core",
     "teachers",
     "schooladmin",
+    "parents",
 ]
 
 MIDDLEWARE = [
@@ -103,6 +104,10 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_URL = "teachers:login"
 LOGIN_REDIRECT_URL = "core_home"
 LOGOUT_REDIRECT_URL = "teachers:login"
+
+# WhatsApp / Twilio webhook signature validation. When unset, validation is
+# skipped — only safe for local development.
+WHATSAPP_AUTH_TOKEN = os.getenv("WHATSAPP_AUTH_TOKEN", "")
 
 
 LANGUAGE_CODE = "en-us"

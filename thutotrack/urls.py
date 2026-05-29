@@ -18,5 +18,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("teachers/", include("teachers.urls")),
     path("admin-portal/", include("schooladmin.urls")),
+    path("", include("parents.urls")),
     path("", home, name="core_home"),
 ]

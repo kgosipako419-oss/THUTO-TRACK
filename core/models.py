@@ -226,6 +226,24 @@ class Enquiry(models.Model):
         return f"[{self.get_status_display()}] {self.subject}"
 
 
+class ParentSession(models.Model):
+    """Tracks the last student a parent's WhatsApp number selected."""
+
+    phone = models.CharField(max_length=20, unique=True)
+    selected_student = models.ForeignKey(
+        Student, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="parent_sessions",
+    )
+    last_message_at = models.DateTimeField(auto_now=True)
+    message_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        indexes = [models.Index(fields=("phone",))]
+
+    def __str__(self) -> str:
+        return self.phone
+
+
 class Mark(models.Model):
     class AssessmentType(models.TextChoices):
         TEST = "TEST", "Test"

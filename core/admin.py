@@ -7,6 +7,7 @@ from .models import (
     ClassGroup,
     Enquiry,
     Mark,
+    ParentSession,
     School,
     SchoolAdminProfile,
     Student,
@@ -98,6 +99,13 @@ class TermScheduleAdmin(admin.ModelAdmin):
     list_display = ("school", "academic_year", "term", "start_date", "end_date")
     list_filter = ("school", "academic_year")
     ordering = ("school", "academic_year", "term")
+
+
+@admin.register(ParentSession)
+class ParentSessionAdmin(admin.ModelAdmin):
+    list_display = ("phone", "selected_student", "message_count", "last_message_at")
+    search_fields = ("phone",)
+    readonly_fields = ("last_message_at",)
 
 
 @admin.register(Enquiry)

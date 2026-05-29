@@ -10,12 +10,24 @@ Creates:
     - subjects, one class, and a handful of students
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from core.models import ClassGroup, School, SchoolAdminProfile, Student, Subject, TeacherProfile, TermSchedule, User
+from core.models import (
+    Attendance,
+    BehaviorNote,
+    ClassGroup,
+    Mark,
+    School,
+    SchoolAdminProfile,
+    Student,
+    Subject,
+    TeacherProfile,
+    TermSchedule,
+    User,
+)
 
 
 class Command(BaseCommand):
@@ -157,9 +169,47 @@ class Command(BaseCommand):
                 },
             )
 
+        # Seed sample marks, attendance and a behavior note for Naledi so that
+        # the WhatsApp parent flow has something to reply with out of the box.
+        naledi = Student.objects.filter(school=school, student_number="S-2026-001").first()
+        if naledi:
+            math = next((s for s in subjects if s.code == "MATH"), None)
+            english = next((s for s in subjects if s.code == "ENG"), None)
+            setswana = next((s for s in subjects if s.code == "SET"), None)
+            sample_marks = [
+                (math, "TEST", "Mid-term test 1", 78, 100),
+                (math, "QUIZ", "Chapter 3 quiz", 18, 20),
+                (english, "ASSIGN", "Essay: My village", 42, 50),
+                (setswana, "TEST", "Reading comprehension", 65, 80),
+            ]
+            for subject, atype, title, score, max_score in sample_marks:
+                if subject is None:
+                    continue
+                Mark.objects.get_or_create(
+                    student=naledi, subject=subject, teacher=teacher,
+                    title=title, term=1, academic_year=year,
+                    defaults={"assessment_type": atype, "score": score, "max_score": max_score},
+                )
+
+            today = date.today()
+            for delta, status in [(0, "P"), (1, "P"), (2, "A"), (3, "P"), (4, "L")]:
+                Attendance.objects.get_or_create(
+                    student=naledi, date=today - timedelta(days=delta),
+                    defaults={"status": status, "recorded_by": teacher},
+                )
+
+            BehaviorNote.objects.get_or_create(
+                student=naledi, teacher=teacher,
+                note="Helped a classmate with their Setswana homework.",
+                defaults={"category": "POS"},
+            )
+
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
         self.stdout.write("")
         self.stdout.write("Log in at / with:")
         self.stdout.write("    teacher portal: mr_kgosi / teacher123")
         self.stdout.write("    school admin portal: mma_pula / admin123")
         self.stdout.write("    Django admin (/admin/): admin / admin123")
+        self.stdout.write("")
+        self.stdout.write("Parent WhatsApp demo: Naledi's parent phone is +267 71 222 001.")
+        self.stdout.write("    POST to /whatsapp/webhook/ with From=whatsapp:+26771222001 and Body=marks")

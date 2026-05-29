@@ -23,6 +23,7 @@ from core.models import (  # noqa: E402
     ClassGroup,
     Enquiry,
     Mark,
+    ParentSession,
     School,
     SchoolAdminProfile,
     Student,
@@ -1101,5 +1102,179 @@ check(
 )
 # Cleanup
 TermSchedule.objects.filter(school=admin_school, academic_year=2098).delete()
+
+# ---------------------------------------------------------------------------
+# 19. WhatsApp parent webhook
+# ---------------------------------------------------------------------------
+ParentSession.objects.all().delete()
+
+# Make sure Naledi has at least some marks (seed re-runs create them, but
+# previous test cleanups may have wiped them). Recreate the minimal set.
+naledi = Student.objects.get(student_number="S-2026-001")
+math_subj = Subject.objects.get(school=naledi.school, code="MATH")
+eng_subj = Subject.objects.get(school=naledi.school, code="ENG")
+Mark.objects.filter(student=naledi, term=1, academic_year=2026, title__startswith="WhatsApp").delete()
+Mark.objects.create(
+    student=naledi, subject=math_subj, teacher=teacher,
+    assessment_type="TEST", title="WhatsApp test 1",
+    score=78, max_score=100, term=1, academic_year=2026,
+)
+Mark.objects.create(
+    student=naledi, subject=eng_subj, teacher=teacher,
+    assessment_type="ASSIGN", title="WhatsApp essay 1",
+    score=42, max_score=50, term=1, academic_year=2026,
+)
+Attendance.objects.filter(student=naledi).delete()
+Attendance.objects.create(student=naledi, date=date(2026, 5, 20), status="P", recorded_by=teacher)
+Attendance.objects.create(student=naledi, date=date(2026, 5, 21), status="P", recorded_by=teacher)
+Attendance.objects.create(student=naledi, date=date(2026, 5, 22), status="A", recorded_by=teacher)
+BehaviorNote.objects.filter(student=naledi, note__startswith="WA:").delete()
+BehaviorNote.objects.create(
+    student=naledi, teacher=teacher, category="POS",
+    note="WA: showed great teamwork in science project",
+)
+
+# Use the unauthenticated test client — webhook is public (validated by Twilio sig in prod)
+wa = Client()
+WEBHOOK = "/whatsapp/webhook/"
+NALEDI_PHONE = "whatsapp:+26771222001"  # matches +267 71 222 001 in fixture
+UNKNOWN_PHONE = "whatsapp:+26799999999"
+
+# 19a. GET returns a friendly health message
+resp = wa.get(WEBHOOK)
+check("webhook GET 200", resp.status_code == 200)
+check("webhook GET mentions ThutoTrack", b"ThutoTrack" in resp.content)
+
+# 19b. Unknown phone: gentle "your number isn't linked" reply
+resp = wa.post(WEBHOOK, {"From": UNKNOWN_PHONE, "Body": "hi"})
+check("webhook POST 200 for unknown phone", resp.status_code == 200)
+check("webhook returns XML (TwiML)", resp["Content-Type"].startswith("application/xml"))
+check("webhook body wrapped in <Response><Message>", b"<Response><Message>" in resp.content)
+check("unknown phone gets onboarding message", b"isn't linked to a student" in resp.content)
+check("no ParentSession was created for unknown phone",
+      not ParentSession.objects.filter(phone__contains="9999").exists())
+
+# 19c. Known phone, "hi" -> welcome menu showing single student
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "hi"})
+body = resp.content.decode("utf-8")
+check("known phone gets ThutoTrack greeting", "ThutoTrack" in body)
+check("welcome mentions the student name", "Naledi Seretse" in body)
+check("welcome shows class", "Form 1A" in body)
+check("welcome lists available commands", "marks" in body and "attendance" in body and "report" in body)
+session = ParentSession.objects.get(phone__contains="22001")
+check("ParentSession was created", session is not None)
+check("session auto-selected the only student", session.selected_student_id == naledi.id)
+
+# 19d. "marks"
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "marks"})
+body = resp.content.decode("utf-8")
+check("marks reply mentions student", "Naledi" in body)
+check("marks reply includes Mathematics", "Mathematics" in body)
+check("marks reply includes WhatsApp test 1", "WhatsApp test 1" in body)
+check("marks reply includes English", "English" in body)
+check("marks reply contains percentage", "78%" in body or "78" in body)
+
+# 19e. "attendance"
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "attendance"})
+body = resp.content.decode("utf-8")
+check("attendance reply mentions student", "Naledi" in body)
+check("attendance reply shows Present count", "Present" in body)
+# 2 present out of 3 = 67%
+check("attendance reply shows correct rate (67%)", "67%" in body)
+
+# 19f. "report" -- term summary
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "report"})
+body = resp.content.decode("utf-8")
+check("report reply mentions Term", "Term" in body)
+check("report reply has Overall line", "Overall" in body)
+# Math: 78%, English: 84% -> avg = 81%
+check("report overall avg correct (81%)", "81%" in body)
+
+# 19g. "behavior"
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "behavior"})
+body = resp.content.decode("utf-8")
+check("behavior reply mentions student", "Naledi" in body)
+check("behavior reply shows seeded note", "showed great teamwork" in body)
+
+# 19h. Unknown command falls through to student menu with apology
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "gibberish"})
+body = resp.content.decode("utf-8")
+check("unknown command gets apology", "didn't understand" in body)
+check("unknown command still shows student menu", "marks" in body)
+
+# 19i. Shortcut digits work as menu choices (the only-student case: "1" means marks)
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "1"})
+body = resp.content.decode("utf-8")
+check("'1' shortcut returns marks", "Mathematics" in body)
+
+# 19j. Multi-student parent — register a sibling so we exercise the menu
+sibling = Student.objects.create(
+    school=naledi.school,
+    student_number="S-2026-099",
+    first_name="Karabo",
+    last_name="Seretse",
+    class_group=naledi.class_group,
+    parent_phone="+267 71 222 001",  # same parent
+)
+ParentSession.objects.filter(phone__contains="22001").delete()
+
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "hi"})
+body = resp.content.decode("utf-8")
+check("multi-student welcome lists both children",
+      "Naledi Seretse" in body and "Karabo Seretse" in body)
+check("multi-student menu asks for a number", "number" in body)
+
+# Pick student 1 (alphabetical order — Karabo first)
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "1"})
+body = resp.content.decode("utf-8")
+session = ParentSession.objects.get(phone__contains="22001")
+chosen = session.selected_student
+check("'1' selects a student", chosen is not None)
+check("selected student menu replies", chosen.first_name.encode() in resp.content)
+
+# "marks" now applies to the chosen sibling and should report no marks
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "marks"})
+body = resp.content.decode("utf-8")
+if chosen.id == sibling.id:
+    check("marks for sibling-without-marks says 'No marks recorded'",
+          "No marks" in body)
+else:
+    check("marks for Naledi still works after menu choice",
+          "Mathematics" in body)
+
+# Invalid number reply
+resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "99"})
+body = resp.content.decode("utf-8")
+check("invalid student-number choice gets a helpful error",
+      "not one of your students" in body or "Invalid" in body)
+
+# Cleanup sibling and sessions
+sibling.delete()
+ParentSession.objects.all().delete()
+Mark.objects.filter(student=naledi, title__startswith="WhatsApp").delete()
+
+# 19k. Signature validation: enable a token and ensure unsigned requests are rejected
+from django.test import override_settings  # noqa: E402
+
+with override_settings(WHATSAPP_AUTH_TOKEN="test-twilio-token"):
+    resp = wa.post(WEBHOOK, {"From": NALEDI_PHONE, "Body": "hi"})
+    check("webhook rejects unsigned POST when token is set (403)", resp.status_code == 403)
+
+    # Provide a correct signature and verify acceptance
+    import base64 as _b64  # noqa: E402
+    import hmac as _hmac  # noqa: E402
+    from hashlib import sha1 as _sha1  # noqa: E402
+
+    params = {"From": NALEDI_PHONE, "Body": "hi"}
+    url = "http://testserver" + WEBHOOK
+    payload = url + "".join(f"{k}{v}" for k, v in sorted(params.items()))
+    sig = _b64.b64encode(
+        _hmac.new(b"test-twilio-token", payload.encode("utf-8"), _sha1).digest()
+    ).decode("ascii")
+    resp = wa.post(WEBHOOK, params, HTTP_X_TWILIO_SIGNATURE=sig)
+    check("correctly-signed POST accepted (200)", resp.status_code == 200)
+
+# Final cleanup
+ParentSession.objects.all().delete()
 
 print(f"\nALL {ASSERT_COUNT} CHECKS PASSED")
