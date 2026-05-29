@@ -1,0 +1,36 @@
+{% extends "parents/base.html" %}
+{% block title %}Parent sign in &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-12 bg-white rounded-lg shadow p-8">
+  <div class="text-center mb-6">
+    <h1 class="text-2xl font-bold text-blue-800">Parent sign in</h1>
+    <p class="text-sm text-slate-500">Enter the phone number registered with your child's school.</p>
+  </div>
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% if error %}
+      <div class="bg-red-100 text-red-800 px-3 py-2 rounded text-sm">{{ error }}</div>
+    {% endif %}
+    <div>
+      <label class="block text-sm font-medium mb-1">Phone number</label>
+      <input type="tel" name="phone" required value="{{ phone_input }}" placeholder="+267 71 222 001"
+             class="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">PIN</label>
+      <input type="password" name="pin" required autocomplete="current-password" inputmode="numeric"
+             class="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+      <p class="text-xs text-slate-500 mt-1">Ask the school to set or reset your PIN if you don't have one.</p>
+    </div>
+    <button type="submit"
+            class="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 rounded">
+      Sign in
+    </button>
+  </form>
+
+  <div class="text-center mt-5 text-sm text-slate-500">
+    <a href="/" class="hover:underline">Back to other sign-in options</a>
+  </div>
+</div>
+{% endblock %}

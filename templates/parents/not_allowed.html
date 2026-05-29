@@ -1,0 +1,11 @@
+{% extends "parents/base.html" %}
+{% block title %}Not your child &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto bg-white rounded-lg shadow p-8 mt-12 text-center">
+  <h1 class="text-xl font-bold mb-2">Not available</h1>
+  <p class="text-slate-600">This student isn't linked to your phone number ({{ phone }}).</p>
+  <p class="text-sm text-slate-500 mt-3">
+    <a href="{% url 'parents:dashboard' %}" class="text-blue-700 hover:underline">Back to your children</a>
+  </p>
+</div>
+{% endblock %}

@@ -1277,4 +1277,184 @@ with override_settings(WHATSAPP_AUTH_TOKEN="test-twilio-token"):
 # Final cleanup
 ParentSession.objects.all().delete()
 
+# ---------------------------------------------------------------------------
+# 20. Landing page + 4 login sections + parent web portal
+# ---------------------------------------------------------------------------
+
+# 20a. Anonymous landing renders all 4 sections with the right form actions
+anon = Client()
+resp = anon.get("/")
+check("anonymous landing 200", resp.status_code == 200)
+body = resp.content
+check("landing shows Teachers section", b"Teachers" in body and b"Sign in as teacher" in body)
+check("landing shows School Head section", b"School Head" in body and b"Sign in as school head" in body)
+check("landing shows Site administrator section", b"Site administrator" in body and b"Django admin" in body)
+check("landing shows Parents section", b"Parents" in body and b"Sign in as parent" in body)
+check("teacher form posts to teachers login", b'action="/teachers/login/"' in body)
+check("school-head form posts to teachers login with admin-portal next",
+      b'name="next" value="/admin-portal/"' in body)
+check("parent form posts to parents login", b'action="/parents/login/"' in body)
+check("admin form points at Django admin", b'action="/admin/login/' in body)
+
+# 20b. Authenticated users get smart-redirected (no landing)
+teacher_client2 = Client()
+teacher_client2.login(username="mr_kgosi", password="teacher123")
+resp = teacher_client2.get("/", follow=False)
+check("logged-in teacher does not see landing",
+      resp.status_code == 302 and "/teachers/" in resp["Location"])
+
+admin_client2 = Client()
+admin_client2.login(username="mma_pula", password="admin123")
+resp = admin_client2.get("/", follow=False)
+check("logged-in school head does not see landing",
+      resp.status_code == 302 and "/admin-portal/" in resp["Location"])
+
+# 20c. Parent login - happy path with seeded credentials
+parent_client = Client()
+resp = parent_client.get("/parents/login/")
+check("parent login page 200", resp.status_code == 200)
+check("parent login asks for phone + PIN",
+      b"Phone number" in resp.content and b"PIN" in resp.content)
+
+# Wrong PIN
+resp = parent_client.post(
+    "/parents/login/", {"phone": "+267 71 222 001", "pin": "9999"},
+)
+check("wrong PIN rejected", b"find a parent account" in resp.content)
+
+# Wrong phone (no account)
+resp = parent_client.post(
+    "/parents/login/", {"phone": "+267 71 000 000", "pin": "1234"},
+)
+check("unknown phone rejected", b"find a parent account" in resp.content)
+
+# Empty
+resp = parent_client.post("/parents/login/", {"phone": "", "pin": ""})
+check("empty submit rejected", b"Enter your phone" in resp.content)
+
+# 20d. Login with various phone formats — all should work
+for raw in ["+267 71 222 001", "26771222001", "071222001", "71222001"]:
+    cli = Client()
+    resp = cli.post("/parents/login/", {"phone": raw, "pin": "1234"}, follow=False)
+    check(
+        f"parent login accepts format '{raw}'",
+        resp.status_code == 302 and "/parents/" in resp["Location"],
+    )
+
+# 20e. Authenticated landing now redirects parent to /parents/
+resp = parent_client.post(
+    "/parents/login/", {"phone": "+267 71 222 001", "pin": "1234"}, follow=False,
+)
+check("parent login redirects to dashboard",
+      resp.status_code == 302 and resp["Location"].endswith("/parents/"))
+
+# Hit landing while logged in -> redirect to /parents/
+resp = parent_client.get("/", follow=False)
+check("logged-in parent redirected to parent portal",
+      resp.status_code == 302 and "/parents/" in resp["Location"])
+
+# 20f. Parent dashboard
+resp = parent_client.get("/parents/")
+check("parent dashboard 200", resp.status_code == 200)
+check("dashboard shows Naledi", b"Naledi Seretse" in resp.content)
+check("dashboard shows school", b"Gaborone Demo Secondary School" in resp.content)
+check("dashboard shows parent phone", b"26771222001" in resp.content)
+
+# 20g. Per-student view — accessible
+resp = parent_client.get(f"/parents/students/{naledi.id}/")
+check("parent student detail 200", resp.status_code == 200)
+check("student detail shows name", b"Naledi Seretse" in resp.content)
+check("student detail shows marks section", b"All marks" in resp.content)
+check("student detail shows attendance", b"Attendance" in resp.content)
+check("student detail shows behavior section", b"Behavior notes" in resp.content)
+
+# 20h. Per-student view — NOT accessible for someone else's child
+other_school_x = School.objects.create(name="Other Parent Test", code="OPT-1")
+other_class_x = ClassGroup.objects.create(
+    school=other_school_x, name="OPT 1A", grade_level=8, academic_year=2026,
+)
+not_my_kid = Student.objects.create(
+    school=other_school_x,
+    student_number="OPT-1",
+    first_name="Not",
+    last_name="Mine",
+    class_group=other_class_x,
+    parent_phone="+267 71 000 000",
+)
+resp = parent_client.get(f"/parents/students/{not_my_kid.id}/")
+check("foreign student is 404", resp.status_code == 404)
+not_my_kid.delete(); other_class_x.delete(); other_school_x.delete()
+
+# 20i. Parent term report PDF
+resp = parent_client.get(f"/parents/students/{naledi.id}/report/?term=1&year=2026")
+check("parent term report 200", resp.status_code == 200)
+check("parent term report is PDF", resp["Content-Type"] == "application/pdf")
+check("parent term report body starts with %PDF", resp.content.startswith(b"%PDF"))
+
+# 20j. Anonymous can't access parent dashboard
+resp = anon.get("/parents/")
+check("anonymous bounced from parent dashboard",
+      resp.status_code in (302, 403))
+
+# Teachers/admins can't access parent dashboard either
+resp = teacher_client2.get("/parents/", follow=False)
+check("teacher bounced from parent dashboard", resp.status_code == 302)
+
+# 20k. Parent logout
+resp = parent_client.post("/parents/logout/", follow=False)
+check("parent logout redirects to landing",
+      resp.status_code == 302 and resp["Location"] == "/")
+resp = parent_client.get("/parents/")
+check("after logout, parent dashboard requires login again", resp.status_code == 302)
+
+# 20l. Schooladmin "Parents" page
+admin_client2 = Client()
+admin_client2.login(username="mma_pula", password="admin123")
+resp = admin_client2.get("/admin-portal/parents/")
+check("admin parents page 200", resp.status_code == 200)
+check("admin parents page lists parent phones", b"71 222 001" in resp.content)
+check("admin parents page shows PIN-set badge", b"PIN set" in resp.content)
+
+# Reset a PIN
+resp = admin_client2.post(
+    "/admin-portal/parents/set-pin/",
+    {"phone": "+267 71 222 002", "pin": "5678"},  # Tumelo's parent (no account yet)
+    follow=True,
+)
+new_parent = User.objects.filter(
+    username="26771222002", role="PARENT",
+).first()
+check("admin created new parent account", new_parent is not None)
+
+# That parent can now log in
+cli3 = Client()
+resp = cli3.post(
+    "/parents/login/", {"phone": "+267 71 222 002", "pin": "5678"}, follow=False,
+)
+check("newly-set PIN works for login",
+      resp.status_code == 302 and "/parents/" in resp["Location"])
+
+# Invalid: too short PIN
+resp = admin_client2.post(
+    "/admin-portal/parents/set-pin/",
+    {"phone": "+267 71 222 003", "pin": "12"},
+    follow=True,
+)
+check("short PIN rejected", b"at least 4 digits" in resp.content)
+check(
+    "short PIN didn't create user",
+    not User.objects.filter(username="26771222003", role="PARENT").exists(),
+)
+
+# Invalid: phone not at this school
+resp = admin_client2.post(
+    "/admin-portal/parents/set-pin/",
+    {"phone": "+267 99 999 999", "pin": "1234"},
+    follow=True,
+)
+check("phone not at school rejected", b"No student at this school" in resp.content)
+
+# Cleanup the parent we created
+User.objects.filter(username="26771222002", role="PARENT").delete()
+
 print(f"\nALL {ASSERT_COUNT} CHECKS PASSED")

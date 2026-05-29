@@ -204,12 +204,31 @@ class Command(BaseCommand):
                 defaults={"category": "POS"},
             )
 
+        # Seed a parent web account for Naledi's parent so the parent portal
+        # demo works out of the box.
+        from core.whatsapp import normalize_phone_for_username
+
+        parent_phone_raw = "+267 71 222 001"
+        parent_username = normalize_phone_for_username(parent_phone_raw)
+        parent_user, _ = User.objects.get_or_create(
+            username=parent_username,
+            defaults={
+                "first_name": "Seretse family",
+                "role": User.Role.PARENT,
+                "phone": parent_phone_raw,
+            },
+        )
+        parent_user.role = User.Role.PARENT
+        parent_user.set_password("1234")
+        parent_user.save()
+
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
         self.stdout.write("")
         self.stdout.write("Log in at / with:")
-        self.stdout.write("    teacher portal: mr_kgosi / teacher123")
+        self.stdout.write("    teacher portal:      mr_kgosi / teacher123")
         self.stdout.write("    school admin portal: mma_pula / admin123")
-        self.stdout.write("    Django admin (/admin/): admin / admin123")
+        self.stdout.write("    Django admin:        admin / admin123")
+        self.stdout.write("    parent web portal:   +267 71 222 001 / 1234")
         self.stdout.write("")
-        self.stdout.write("Parent WhatsApp demo: Naledi's parent phone is +267 71 222 001.")
-        self.stdout.write("    POST to /whatsapp/webhook/ with From=whatsapp:+26771222001 and Body=marks")
+        self.stdout.write("Parent WhatsApp demo: same phone, just message the webhook:")
+        self.stdout.write("    POST /whatsapp/webhook/ From=whatsapp:+26771222001 Body=marks")

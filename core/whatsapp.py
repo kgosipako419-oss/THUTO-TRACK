@@ -37,6 +37,19 @@ def _digits_only(raw: str) -> str:
     return re.sub(r"\D", "", raw or "")
 
 
+def normalize_phone_for_username(raw: str) -> str:
+    """Canonical username form for a parent's phone number.
+
+    Strips formatting and prepends "267" to the last 8 digits, so that
+    "+267 71 222 001", "26771222001", "071222001" and "71222001" all map to
+    the same username "26771222001". Returns an empty string for unusable input.
+    """
+    digits = _digits_only(raw)
+    if not digits:
+        return ""
+    return "267" + digits[-8:] if len(digits) >= 8 else digits
+
+
 def phones_match(stored: str, incoming: str) -> bool:
     """Compare phone numbers loosely.
 

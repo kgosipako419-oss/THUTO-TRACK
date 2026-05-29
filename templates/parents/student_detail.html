@@ -1,0 +1,124 @@
+{% extends "parents/base.html" %}
+{% block title %}{{ student.full_name }} &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'parents:dashboard' %}" class="text-sm text-blue-700 hover:underline">&larr; All my children</a>
+  <h1 class="text-2xl font-bold mt-1">{{ student.full_name }}</h1>
+  <p class="text-sm text-slate-500">{{ student.class_group.name }} &middot; Grade {{ student.class_group.grade_level }} &middot; {{ student.school.name }}</p>
+</div>
+
+<form method="get" action="{% url 'parents:student_report' student.id %}" target="_blank"
+      class="bg-white rounded-lg shadow p-4 mb-6 flex items-end gap-3 flex-wrap">
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Term</label>
+    <select name="term" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      <option value="1">Term 1</option>
+      <option value="2">Term 2</option>
+      <option value="3">Term 3</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Year</label>
+    <input type="number" name="year" value="{{ year }}" min="2000" max="2100"
+           class="w-24 border border-slate-300 rounded px-3 py-2 text-sm">
+  </div>
+  <button class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded text-sm">
+    Download term report (PDF)
+  </button>
+</form>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Attendance ({{ year }})</div>
+    <div class="text-2xl font-bold text-blue-700">
+      {% if att_rate is not None %}{{ att_rate|floatformat:1 }}%{% else %}—{% endif %}
+    </div>
+    <div class="text-xs text-slate-400">{{ att_total }} day(s) recorded</div>
+  </div>
+  {% for label, count in att_counts.items %}
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">{{ label }}</div>
+    <div class="text-2xl font-bold text-slate-800">{{ count }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<section class="bg-white rounded-lg shadow p-5 mb-6">
+  <h2 class="font-semibold mb-3">Subject averages</h2>
+  {% if subject_averages %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr><th class="py-2">Subject</th><th class="text-right">Assessments</th><th class="text-right">Average</th></tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for row in subject_averages %}
+        <tr>
+          <td class="py-2">{{ row.subject.name }}</td>
+          <td class="text-right">{{ row.count }}</td>
+          <td class="text-right font-mono">
+            <span class="{% if row.average >= 70 %}text-emerald-700{% elif row.average >= 50 %}text-amber-600{% else %}text-red-600{% endif %} font-semibold">
+              {{ row.average|floatformat:1 }}%
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-sm text-slate-500">No marks recorded yet.</p>
+  {% endif %}
+</section>
+
+<section class="bg-white rounded-lg shadow p-5 mb-6">
+  <h2 class="font-semibold mb-3">All marks</h2>
+  {% if marks_by_subject %}
+    {% for subject, marks in marks_by_subject.items %}
+      <div class="mb-4">
+        <h3 class="text-sm font-semibold text-blue-800 border-b pb-1 mb-2">{{ subject.name }}</h3>
+        <table class="w-full text-sm">
+          <thead class="text-left text-slate-500">
+            <tr><th class="py-1">Title</th><th>Type</th><th>Term</th><th class="text-right">Score</th><th class="text-right">%</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            {% for m in marks %}
+            <tr>
+              <td class="py-1">{{ m.title }}</td>
+              <td class="text-xs">{{ m.get_assessment_type_display }}</td>
+              <td class="text-xs">T{{ m.term }} / {{ m.academic_year }}</td>
+              <td class="text-right font-mono">{{ m.score }} / {{ m.max_score }}</td>
+              <td class="text-right font-mono">{{ m.percentage|floatformat:1 }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-sm text-slate-500">No marks recorded yet.</p>
+  {% endif %}
+</section>
+
+<section class="bg-white rounded-lg shadow p-5">
+  <h2 class="font-semibold mb-3">Behavior notes</h2>
+  {% if behavior_notes %}
+    <ul class="divide-y text-sm">
+      {% for n in behavior_notes %}
+        <li class="py-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {% if n.category == 'POS' %}bg-emerald-100 text-emerald-800
+              {% elif n.category == 'CON' %}bg-red-100 text-red-800
+              {% else %}bg-slate-100 text-slate-700{% endif %}">
+              {{ n.get_category_display }}
+            </span>
+            <span class="text-xs text-slate-500">{{ n.recorded_at|date:"Y-m-d" }}</span>
+          </div>
+          <p class="mt-1">{{ n.note }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-sm text-slate-500">No behavior notes yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

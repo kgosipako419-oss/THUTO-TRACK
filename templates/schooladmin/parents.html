@@ -1,0 +1,64 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Parent accounts &middot; Admin{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Parent accounts</h1>
+  <p class="text-slate-500 text-sm">
+    Parents sign in to the web portal with their phone number and a PIN you set here.
+    The same phone is used for WhatsApp.
+  </p>
+</div>
+
+<div class="bg-white rounded-lg shadow">
+  {% if parent_groups %}
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2 px-4">Parent</th>
+          <th>Phone</th>
+          <th>Children</th>
+          <th>Account</th>
+          <th class="text-right px-4">Set / reset PIN</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for g in parent_groups %}
+        <tr>
+          <td class="py-3 px-4">{{ g.parent_name|default:"—" }}</td>
+          <td class="font-mono text-xs">{{ g.raw_phone }}</td>
+          <td class="text-xs">
+            {% for s in g.students %}
+              <div>{{ s.full_name }} <span class="text-slate-400">({{ s.class_group.name }})</span></div>
+            {% endfor %}
+          </td>
+          <td>
+            {% if g.account %}
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">PIN set</span>
+            {% else %}
+              <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">No PIN</span>
+            {% endif %}
+          </td>
+          <td class="px-4">
+            <form method="post" action="{% url 'schooladmin:parent_set_pin' %}" class="flex gap-2 justify-end">
+              {% csrf_token %}
+              <input type="hidden" name="phone" value="{{ g.raw_phone }}">
+              <input type="text" name="pin" required pattern="\d{4,8}" inputmode="numeric" placeholder="4-8 digit PIN"
+                     class="w-40 text-xs border border-slate-300 rounded px-2 py-1">
+              <button class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1 rounded">
+                Save
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="p-5 text-sm text-slate-500">No students with parent phone numbers yet.</p>
+  {% endif %}
+</div>
+
+<p class="text-xs text-slate-500 mt-3">
+  Tip: tell parents their phone number works in any format — "+267 71 222 001", "26771222001" or "071222001" all log in the same way.
+</p>
+{% endblock %}

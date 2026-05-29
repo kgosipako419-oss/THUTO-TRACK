@@ -25,4 +25,7 @@ urlpatterns = [
     path("calendar/", views.school_calendar, name="calendar"),
 
     path("school/", views.school_profile, name="school_profile"),
+
+    path("parents/", views.parents_manage, name="parents"),
+    path("parents/set-pin/", views.parent_set_pin, name="parent_set_pin"),
 ]

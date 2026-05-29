@@ -23,6 +23,7 @@ from core.models import (
     TermSchedule,
     User,
 )
+from core.whatsapp import normalize_phone_for_username
 
 
 def _admin_or_403(request):
@@ -596,6 +597,98 @@ def _parse_date(raw):
         return date.fromisoformat(raw[:10])
     except ValueError:
         return "INVALID"
+
+
+# ---------------------------------------------------------------------------
+# Parent web-portal access (PINs)
+# ---------------------------------------------------------------------------
+
+def _parent_groups_for_school(school):
+    """Return one entry per distinct (normalized) parent phone, with kids + account state."""
+    students = (
+        Student.objects.filter(school=school, is_active=True)
+        .exclude(parent_phone="")
+        .select_related("class_group")
+        .order_by("last_name", "first_name")
+    )
+    bucket = {}
+    for s in students:
+        username = normalize_phone_for_username(s.parent_phone)
+        if not username:
+            continue
+        bucket.setdefault(username, {
+            "username": username,
+            "raw_phone": s.parent_phone,
+            "parent_name": s.parent_name,
+            "students": [],
+            "account": None,
+        })["students"].append(s)
+
+    # Fetch existing accounts for these usernames in one query
+    accounts = {u.username: u for u in User.objects.filter(
+        username__in=list(bucket.keys()), role=User.Role.PARENT,
+    )}
+    for username, entry in bucket.items():
+        entry["account"] = accounts.get(username)
+
+    return sorted(bucket.values(), key=lambda e: e["raw_phone"])
+
+
+@_require_admin
+def parents_manage(request, admin):
+    groups = _parent_groups_for_school(admin.school)
+    return render(
+        request,
+        "schooladmin/parents.html",
+        {**_common_context(admin), "parent_groups": groups},
+    )
+
+
+@_require_admin
+def parent_set_pin(request, admin):
+    if request.method != "POST":
+        return redirect("schooladmin:parents")
+
+    raw_phone = (request.POST.get("phone") or "").strip()
+    pin = (request.POST.get("pin") or "").strip()
+    username = normalize_phone_for_username(raw_phone)
+    if not username:
+        messages.error(request, "Invalid phone number.")
+        return redirect("schooladmin:parents")
+    if not pin or len(pin) < 4:
+        messages.error(request, "PIN must be at least 4 digits.")
+        return redirect("schooladmin:parents")
+
+    # Confirm this phone belongs to a student at THIS school
+    if not Student.objects.filter(school=admin.school, is_active=True).exists():
+        messages.error(request, "No active students yet.")
+        return redirect("schooladmin:parents")
+
+    matching = [
+        s for s in Student.objects.filter(school=admin.school, is_active=True).exclude(parent_phone="")
+        if normalize_phone_for_username(s.parent_phone) == username
+    ]
+    if not matching:
+        messages.error(request, "No student at this school has that parent phone.")
+        return redirect("schooladmin:parents")
+
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={
+            "first_name": matching[0].parent_name or "",
+            "role": User.Role.PARENT,
+            "phone": raw_phone,
+        },
+    )
+    user.role = User.Role.PARENT
+    user.is_active = True
+    user.set_password(pin)
+    user.save()
+    if created:
+        messages.success(request, f"Created parent account for {raw_phone} with the new PIN.")
+    else:
+        messages.success(request, f"PIN updated for {raw_phone}.")
+    return redirect("schooladmin:parents")
 
 
 @_require_admin

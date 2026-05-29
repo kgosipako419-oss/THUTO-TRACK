@@ -21,6 +21,7 @@
         <a href="{% url 'schooladmin:enquiries' %}" class="hover:underline">Enquiries{% if open_enquiries_count %} <span class="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ open_enquiries_count }}</span>{% endif %}</a>
         <a href="{% url 'schooladmin:teachers' %}" class="hover:underline">Teachers</a>
         <a href="{% url 'schooladmin:students' %}" class="hover:underline">Students</a>
+        <a href="{% url 'schooladmin:parents' %}" class="hover:underline">Parents</a>
         <a href="{% url 'schooladmin:classes' %}" class="hover:underline">Classes</a>
         <a href="{% url 'schooladmin:subjects' %}" class="hover:underline">Subjects</a>
         <a href="{% url 'schooladmin:calendar' %}" class="hover:underline">Calendar</a>

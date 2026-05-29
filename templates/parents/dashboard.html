@@ -1,0 +1,27 @@
+{% extends "parents/base.html" %}
+{% block title %}My children &middot; ThutoTrack{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">My children</h1>
+  <p class="text-slate-500 text-sm">Phone on file: {{ parent_phone }}</p>
+</div>
+
+{% if students %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for s in students %}
+      <a href="{% url 'parents:student_detail' s.id %}"
+         class="block bg-white rounded-lg shadow p-5 hover:shadow-md transition">
+        <div class="text-lg font-semibold text-blue-800">{{ s.full_name }}</div>
+        <div class="text-sm text-slate-500">{{ s.class_group.name }} &middot; Grade {{ s.class_group.grade_level }} &middot; {{ s.class_group.academic_year }}</div>
+        <div class="text-xs text-slate-400 mt-1">{{ s.school.name }}</div>
+        <div class="text-xs text-blue-700 mt-3">View progress &rarr;</div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="bg-white rounded-lg shadow p-8 text-center">
+    <p class="text-slate-600">We couldn't find any children linked to your phone number.</p>
+    <p class="text-sm text-slate-500 mt-2">Please contact your child's school to register your number.</p>
+  </div>
+{% endif %}
+{% endblock %}
