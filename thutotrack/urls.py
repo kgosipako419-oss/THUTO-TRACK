@@ -1,6 +1,21 @@
 from django.contrib import admin
+from django.db import connection
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import include, path
+
+
+def healthz(request):
+    """Health probe for the platform (Render pings this).
+
+    Returns 200 only when the DB is reachable so a half-broken deploy fails fast.
+    """
+    try:
+        with connection.cursor() as cur:
+            cur.execute("SELECT 1")
+    except Exception as exc:
+        return HttpResponse(f"db unreachable: {exc}", status=503, content_type="text/plain")
+    return HttpResponse("ok", content_type="text/plain")
 
 
 def home(request):
@@ -22,6 +37,7 @@ def home(request):
 
 
 urlpatterns = [
+    path("healthz/", healthz, name="healthz"),
     path("admin/", admin.site.urls),
     path("teachers/", include("teachers.urls")),
     path("admin-portal/", include("schooladmin.urls")),

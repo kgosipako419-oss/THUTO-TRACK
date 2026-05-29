@@ -18,7 +18,21 @@ SECRET_KEY = os.getenv(
     "django-insecure-dev-only-change-me-in-production",
 )
 DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h.strip()]
+
+# Render injects this when the service is deployed — adds the public hostname so
+# you don't have to remember to set ALLOWED_HOSTS by hand after deploy.
+_render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if _render_host and _render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_render_host)
+
+# CSRF: Django 4+ requires scheme+host in CSRF_TRUSTED_ORIGINS for cross-origin
+# POSTs. We seed it from env and auto-add Render's public hostname when present.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
+if _render_host:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_render_host}")
 
 
 INSTALLED_APPS = [

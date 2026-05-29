@@ -28,4 +28,7 @@ urlpatterns = [
 
     path("parents/", views.parents_manage, name="parents"),
     path("parents/set-pin/", views.parent_set_pin, name="parent_set_pin"),
+
+    path("exports/", views.exports, name="exports"),
+    path("exports/download/", views.exports_download, name="exports_download"),
 ]

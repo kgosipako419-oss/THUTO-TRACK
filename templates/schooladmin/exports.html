@@ -1,0 +1,111 @@
+{% extends "schooladmin/base.html" %}
+{% block title %}Exports &middot; Admin{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Data exports</h1>
+  <p class="text-slate-500 text-sm">
+    Download school-wide data for archival or Ministry submission. Adjust column
+    mapping in your spreadsheet tool to match the Ministry template if required.
+  </p>
+</div>
+
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-4 flex items-end gap-3 flex-wrap">
+  <div>
+    <label class="block text-xs font-medium text-slate-500 mb-1">Year</label>
+    <select name="year" class="border border-slate-300 rounded px-3 py-2 text-sm">
+      {% for y in available_years %}
+        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm">
+    Show counts
+  </button>
+</form>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Students enrolled in {{ selected_year }}</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ counts.students }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Marks recorded in {{ selected_year }}</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ counts.marks }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="text-xs text-slate-500">Attendance records in {{ selected_year }}</div>
+    <div class="text-2xl font-bold text-emerald-700">{{ counts.attendance }}</div>
+  </div>
+</div>
+
+<section class="bg-white rounded-lg shadow p-5 mb-4">
+  <h2 class="font-semibold mb-3">Combined Ministry pack</h2>
+  <p class="text-sm text-slate-600 mb-3">
+    One .xlsx workbook with four sheets &mdash; roster, marks, attendance and
+    a per-class/subject performance summary. Best starting point for a
+    Ministry submission.
+  </p>
+  <form method="get" action="{% url 'schooladmin:exports_download' %}" class="flex items-end gap-3 flex-wrap">
+    <input type="hidden" name="kind" value="pack">
+    <input type="hidden" name="format" value="xlsx">
+    <div>
+      <label class="block text-xs font-medium text-slate-500 mb-1">Year</label>
+      <select name="year" class="border border-slate-300 rounded px-3 py-2 text-sm">
+        {% for y in available_years %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-slate-500 mb-1">Marks term filter</label>
+      <select name="term" class="border border-slate-300 rounded px-3 py-2 text-sm">
+        <option value="">All terms</option>
+        <option value="1">Term 1 only</option>
+        <option value="2">Term 2 only</option>
+        <option value="3">Term 3 only</option>
+      </select>
+    </div>
+    <button class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm">
+      Download Ministry pack (.xlsx)
+    </button>
+  </form>
+</section>
+
+<section class="bg-white rounded-lg shadow p-5">
+  <h2 class="font-semibold mb-3">Individual exports</h2>
+  <p class="text-sm text-slate-600 mb-4">Download a single dataset, optionally as CSV for direct import elsewhere.</p>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for kind, label in kinds %}
+    <div class="border border-slate-200 rounded p-4">
+      <div class="font-semibold mb-2">{{ label }}</div>
+      <p class="text-xs text-slate-500 mb-3">
+        {% if kind == 'roster' %}One row per student enrolled this year, with demographics and parent contact.
+        {% elif kind == 'marks' %}One row per recorded mark, including subject, score, and term.
+        {% elif kind == 'attendance' %}One row per attendance record, including date and status.
+        {% elif kind == 'performance' %}Per (class, subject, term) averages and assessment counts.
+        {% endif %}
+      </p>
+      <form method="get" action="{% url 'schooladmin:exports_download' %}" class="flex items-end gap-2 flex-wrap">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <input type="hidden" name="year" value="{{ selected_year }}">
+        {% if kind == 'marks' %}
+        <select name="term" class="text-xs border border-slate-300 rounded px-2 py-1">
+          <option value="">All terms</option>
+          <option value="1">Term 1</option>
+          <option value="2">Term 2</option>
+          <option value="3">Term 3</option>
+        </select>
+        {% endif %}
+        <select name="format" class="text-xs border border-slate-300 rounded px-2 py-1">
+          <option value="xlsx">.xlsx</option>
+          <option value="csv">.csv</option>
+        </select>
+        <button class="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1 rounded">
+          Download
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

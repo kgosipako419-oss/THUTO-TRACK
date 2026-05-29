@@ -26,6 +26,7 @@
         <a href="{% url 'schooladmin:subjects' %}" class="hover:underline">Subjects</a>
         <a href="{% url 'schooladmin:calendar' %}" class="hover:underline">Calendar</a>
         <a href="{% url 'schooladmin:school_profile' %}" class="hover:underline">School</a>
+        <a href="{% url 'schooladmin:exports' %}" class="hover:underline">Exports</a>
         <span class="opacity-70 border-l border-slate-600 pl-4">{{ user.get_full_name|default:user.username }}</span>
         <form method="post" action="{% url 'teachers:logout' %}" class="inline">
           {% csrf_token %}

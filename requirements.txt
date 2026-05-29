@@ -4,3 +4,7 @@ django-htmx==1.19.0
 openpyxl==3.1.5
 whitenoise==6.7.0
 reportlab==4.2.5
+
+# Production-only (binary wheels mean they install cleanly on dev too)
+psycopg[binary]==3.2.3
+gunicorn==23.0.0

@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.db.models import Avg, Count, F, FloatField, Q
 from django.db.models.functions import Cast
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
@@ -23,6 +24,7 @@ from core.models import (
     TermSchedule,
     User,
 )
+from core.exports import KIND_LABELS, VALID_FORMATS, VALID_KINDS, build_ministry_pack, build_single_export
 from core.whatsapp import normalize_phone_for_username
 
 
@@ -689,6 +691,89 @@ def parent_set_pin(request, admin):
     else:
         messages.success(request, f"PIN updated for {raw_phone}.")
     return redirect("schooladmin:parents")
+
+
+# ---------------------------------------------------------------------------
+# Ministry / archival data exports
+# ---------------------------------------------------------------------------
+
+@_require_admin
+def exports(request, admin):
+    current_year = now().year
+    available_years = list(
+        ClassGroup.objects.filter(school=admin.school)
+        .values_list("academic_year", flat=True)
+        .distinct()
+        .order_by("-academic_year")
+    )
+    if not available_years:
+        available_years = [current_year]
+
+    # Quick counts so the admin can see what each export would pull
+    selected_year = current_year
+    try:
+        selected_year = int(request.GET.get("year") or current_year)
+    except ValueError:
+        pass
+
+    counts = {
+        "students": Student.objects.filter(
+            school=admin.school, class_group__academic_year=selected_year,
+        ).count(),
+        "marks": Mark.objects.filter(
+            student__school=admin.school, academic_year=selected_year,
+        ).count(),
+        "attendance": Attendance.objects.filter(
+            student__school=admin.school, date__year=selected_year,
+        ).count(),
+    }
+
+    return render(
+        request,
+        "schooladmin/exports.html",
+        {
+            **_common_context(admin),
+            "available_years": available_years,
+            "selected_year": selected_year,
+            "current_year": current_year,
+            "counts": counts,
+            "kinds": [(k, KIND_LABELS[k]) for k in ("roster", "marks", "attendance", "performance")],
+        },
+    )
+
+
+@_require_admin
+def exports_download(request, admin):
+    kind = request.GET.get("kind", "")
+    fmt = request.GET.get("format", "xlsx")
+    try:
+        year = int(request.GET.get("year") or now().year)
+    except ValueError:
+        year = now().year
+    term_raw = request.GET.get("term", "")
+    term = None
+    if term_raw:
+        try:
+            t = int(term_raw)
+            if t in (1, 2, 3):
+                term = t
+        except ValueError:
+            pass
+
+    if fmt not in VALID_FORMATS:
+        fmt = "xlsx"
+
+    if kind == "pack":
+        body, content_type, filename = build_ministry_pack(admin.school, year, term)
+    elif kind in VALID_KINDS:
+        body, content_type, filename = build_single_export(kind, admin.school, year, term, fmt)
+    else:
+        messages.error(request, "Unknown export type.")
+        return redirect("schooladmin:exports")
+
+    response = HttpResponse(body, content_type=content_type)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @_require_admin
