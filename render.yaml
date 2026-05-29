@@ -6,6 +6,7 @@
 databases:
   - name: thutotrack-db
     plan: free
+    region: frankfurt   # must match the web service region
     databaseName: thutotrack
     user: thutotrack
 
@@ -17,7 +18,10 @@ services:
     region: frankfurt   # closest free region to Botswana; change if you prefer
     branch: main
     buildCommand: "./build.sh"
-    startCommand: "gunicorn thutotrack.wsgi:application --workers 2 --bind 0.0.0.0:$PORT"
+    # Migrate at startup, not in build: on a fresh Blueprint deploy the DB is
+    # provisioned in parallel with the web service so it may not be reachable
+    # during the build phase. At startup it's guaranteed to be online.
+    startCommand: "python manage.py migrate --no-input && gunicorn thutotrack.wsgi:application --workers 2 --bind 0.0.0.0:$PORT"
     healthCheckPath: /healthz/
     envVars:
       - key: PYTHON_VERSION
