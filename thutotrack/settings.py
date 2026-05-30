@@ -18,7 +18,13 @@ SECRET_KEY = os.getenv(
     "django-insecure-dev-only-change-me-in-production",
 )
 DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h.strip()]
+# Use `or` so an empty-string env var (common when set via Render's UI) falls
+# back to the default instead of producing an empty list.
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in (os.getenv("DJANGO_ALLOWED_HOSTS") or "localhost,127.0.0.1,testserver").split(",")
+    if h.strip()
+]
 
 # Render injects this when the service is deployed — adds the public hostname so
 # you don't have to remember to set ALLOWED_HOSTS by hand after deploy.
@@ -29,7 +35,7 @@ if _render_host and _render_host not in ALLOWED_HOSTS:
 # CSRF: Django 4+ requires scheme+host in CSRF_TRUSTED_ORIGINS for cross-origin
 # POSTs. We seed it from env and auto-add Render's public hostname when present.
 CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+    o.strip() for o in (os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS") or "").split(",") if o.strip()
 ]
 if _render_host:
     CSRF_TRUSTED_ORIGINS.append(f"https://{_render_host}")
@@ -130,10 +136,25 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+# Django 5.1+ replaces STATICFILES_STORAGE / DEFAULT_FILE_STORAGE with a unified
+# STORAGES dict. WhiteNoise's compressed/manifest storage gives static assets
+# a hashed filename so browsers can cache them forever.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

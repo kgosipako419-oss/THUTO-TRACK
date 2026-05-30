@@ -48,12 +48,16 @@ class Command(BaseCommand):
                 "email": "admin@example.com",
             },
         )
-        if created:
-            admin.set_password("admin123")
-            admin.save()
-            self.stdout.write(self.style.SUCCESS("Created superuser: admin / admin123"))
-        else:
-            self.stdout.write("Superuser 'admin' already exists, skipping.")
+        # Always set the password — makes the command idempotent so re-running
+        # it (or running it on a partially-seeded DB) restores the documented
+        # demo credentials instead of silently keeping a stale password.
+        admin.is_staff = True
+        admin.is_superuser = True
+        admin.set_password("admin123")
+        admin.save()
+        self.stdout.write(self.style.SUCCESS(
+            f"{'Created' if created else 'Reset'} superuser: admin / admin123"
+        ))
 
         # Create a non-superuser school admin for portal testing
         principal_user, created = User.objects.get_or_create(
@@ -66,10 +70,12 @@ class Command(BaseCommand):
                 "phone": "+267 71 100 001",
             },
         )
-        if created:
-            principal_user.set_password("admin123")
-            principal_user.save()
-            self.stdout.write(self.style.SUCCESS("Created school admin: mma_pula / admin123"))
+        principal_user.role = User.Role.SCHOOL_ADMIN
+        principal_user.set_password("admin123")
+        principal_user.save()
+        self.stdout.write(self.style.SUCCESS(
+            f"{'Created' if created else 'Reset'} school admin: mma_pula / admin123"
+        ))
 
         school, _ = School.objects.get_or_create(
             code="DEMO-001",
@@ -128,10 +134,12 @@ class Command(BaseCommand):
                 "phone": "+267 71 000 001",
             },
         )
-        if created:
-            teacher_user.set_password("teacher123")
-            teacher_user.save()
-            self.stdout.write(self.style.SUCCESS("Created teacher user: mr_kgosi / teacher123"))
+        teacher_user.role = User.Role.TEACHER
+        teacher_user.set_password("teacher123")
+        teacher_user.save()
+        self.stdout.write(self.style.SUCCESS(
+            f"{'Created' if created else 'Reset'} teacher: mr_kgosi / teacher123"
+        ))
 
         teacher, _ = TeacherProfile.objects.get_or_create(
             user=teacher_user,
