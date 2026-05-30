@@ -166,6 +166,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
+    # Railway/Render send healthchecks over internal HTTP without setting
+    # X-Forwarded-Proto, so SECURE_SSL_REDIRECT would 301 them and the
+    # platform marks the deploy as unhealthy. Exempt the probe path so the
+    # platform always gets a direct 200.
+    SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
