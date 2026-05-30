@@ -80,6 +80,10 @@ Then open http://127.0.0.1:8000 and log in with one of the seeded accounts (prin
 python manage.py test
 ```
 
+## Engineering Report
+
+A full engineering project report (abstract, methodology, design, testing, results, etc.) is available in [`docs/report.tex`](docs/report.tex). See [`docs/README.md`](docs/README.md) for compile instructions.
+
 ## Contributing
 
 Ideas and feedback welcome — open an issue to share thoughts.
