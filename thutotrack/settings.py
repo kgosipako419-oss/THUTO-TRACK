@@ -143,15 +143,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
 
 # Django 5.1+ replaces STATICFILES_STORAGE / DEFAULT_FILE_STORAGE with a unified
-# STORAGES dict. WhiteNoise's compressed/manifest storage gives static assets
-# a hashed filename so browsers can cache them forever.
+# STORAGES dict. CompressedStaticFilesStorage (non-manifest) compresses with
+# gzip/brotli but doesn't hash filenames — chosen over the manifest variant
+# because the latter 500s if any referenced static file isn't in the manifest,
+# which is brittle across PaaS build pipelines (Railway/Render/etc.).
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
         "BACKEND": (
-            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            "whitenoise.storage.CompressedStaticFilesStorage"
             if not DEBUG
             else "django.contrib.staticfiles.storage.StaticFilesStorage"
         ),
