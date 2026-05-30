@@ -26,19 +26,21 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
-# Render injects this when the service is deployed — adds the public hostname so
-# you don't have to remember to set ALLOWED_HOSTS by hand after deploy.
-_render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-if _render_host and _render_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(_render_host)
+# Auto-detect the public hostname from whichever PaaS we're running on so
+# ALLOWED_HOSTS doesn't need manual configuration after deploy.
+#   - Render injects RENDER_EXTERNAL_HOSTNAME
+#   - Railway injects RAILWAY_PUBLIC_DOMAIN
+_platform_host = os.getenv("RENDER_EXTERNAL_HOSTNAME") or os.getenv("RAILWAY_PUBLIC_DOMAIN")
+if _platform_host and _platform_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_platform_host)
 
 # CSRF: Django 4+ requires scheme+host in CSRF_TRUSTED_ORIGINS for cross-origin
-# POSTs. We seed it from env and auto-add Render's public hostname when present.
+# POSTs. Seed from env and auto-add the platform hostname when present.
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in (os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS") or "").split(",") if o.strip()
 ]
-if _render_host:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{_render_host}")
+if _platform_host:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_platform_host}")
 
 
 INSTALLED_APPS = [
